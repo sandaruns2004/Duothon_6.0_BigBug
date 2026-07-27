@@ -1,16 +1,24 @@
 {
   "name": "aegisvault-admin-service",
   "version": "1.0.0",
-  "description": "Admin Service for AegisVault",
+  "description": "Admin Service for AegisVault Banking Platform",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node src/index.js"
+    "dev": "node src/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.11.0",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "helmet": "^7.1.0"
+    "helmet": "^7.1.0",
+    "winston": "^3.13.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "prisma": "^5.11.0"
   }
 }

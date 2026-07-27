@@ -1,0 +1,95 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["admin_db", "auth_db", "acct_db", "txn_db"]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Admin Service Schemas (admin_db)
+// ═══════════════════════════════════════════════════════════════════
+
+model SystemMetric {
+  id          String   @id @default(uuid())
+  metricName  String   @map("metric_name")
+  metricValue Float    @map("metric_value")
+  recordedAt  DateTime @default(now()) @map("recorded_at")
+
+  @@index([metricName])
+  @@index([recordedAt])
+  @@map("system_metrics")
+  @@schema("admin_db")
+}
+
+model AdminAction {
+  id           String   @id @default(uuid())
+  adminUserId  String?  @map("admin_user_id")
+  action       String
+  targetUserId String?  @map("target_user_id")
+  reason       String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([adminUserId])
+  @@index([targetUserId])
+  @@index([action])
+  @@map("admin_actions")
+  @@schema("admin_db")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Cross-Schema Read/Write References (auth_db, acct_db, txn_db)
+// ═══════════════════════════════════════════════════════════════════
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  phone          String   @unique
+  nic            String   @unique
+  passwordHash   String   @map("password_hash")
+  role           String   @default("CUSTOMER")
+  kycStatus      String   @default("PENDING") @map("kyc_status")
+  failedAttempts Int      @default(0) @map("failed_attempts")
+  isLocked       Boolean  @default(false) @map("is_locked")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+  @@schema("auth_db")
+}
+
+model Account {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  accountNumber String   @unique @map("account_number")
+  accountType   String   @default("SAVINGS") @map("account_type")
+  balance       Decimal  @default(0.00) @db.Decimal(15, 2)
+  currency      String   @default("LKR")
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("accounts")
+  @@schema("acct_db")
+}
+
+model Transaction {
+  id              String   @id @default(uuid())
+  referenceNumber String   @unique @map("reference_number")
+  fromAccountId   String   @map("from_account_id")
+  toAccountId     String   @map("to_account_id")
+  amount          Decimal  @db.Decimal(15, 2)
+  currency        String   @default("LKR")
+  status          String   @default("SUCCESS")
+  type            String   @default("TRANSFER")
+  description     String?
+  fraudFlag       Boolean  @default(false) @map("fraud_flag")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("transactions")
+  @@schema("txn_db")
+}

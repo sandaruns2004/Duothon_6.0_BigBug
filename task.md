@@ -100,31 +100,31 @@
 ## 🟣 Stage 4: Multi-Channel Notifications, Audit Trail & Admin Service
 
 ### 4.1 Notification Service (`services/notification-service` on port 3004)
-- [ ] Initialize Express.js app with Prisma client and `nodemailer`
-- [ ] Create Prisma schema for `notif_schema`:
-  - [ ] `Notification` model (`id`, `userId`, `title`, `message`, `type`, `channel=EMAIL|PUSH`, `isRead`)
-  - [ ] `AuditLog` model (`id`, `userId`, `action`, `resource`, `resourceId`, `ipAddress`, `details`, `hash`, `previousHash`)
-- [ ] Implement HTML email sender using Nodemailer (Gmail SMTP or Mailtrap sandbox)
-- [ ] Implement internal `POST /internal/notify` (store DB notification + send HTML email alert)
-- [ ] Implement internal `POST /internal/email` (direct OTP email sender called by Auth Service)
-- [ ] Build Cryptographic Hash-Chain Audit Engine (`POST /internal/audit`):
-  - [ ] Retrieve last log record's `hash` (`prevHash`)
-  - [ ] Calculate `hash = SHA256(prevHash + timestamp + action + userId + details)`
-  - [ ] Store immutable audit record
-- [ ] Implement `GET /api/notifications`, `PUT /api/notifications/:id/read`, and `PUT /api/notifications/read-all`
-- [ ] Implement admin viewer `GET /api/audit` (searchable/filterable audit trail)
-- [ ] Add `/health` endpoint
+- [x] Initialize Express.js app with Prisma client and `nodemailer`
+- [x] Create Prisma schema for `notif_schema`:
+  - [x] `Notification` model (`id`, `userId`, `title`, `message`, `type`, `channel=EMAIL|PUSH`, `isRead`)
+  - [x] `AuditLog` model (`id`, `userId`, `action`, `resource`, `resourceId`, `ipAddress`, `details`, `hash`, `previousHash`)
+- [x] Implement HTML email sender using Nodemailer (Gmail SMTP or Mailtrap sandbox)
+- [x] Implement internal `POST /internal/notify` (store DB notification + send HTML email alert)
+- [x] Implement internal `POST /internal/email` (direct OTP email sender called by Auth Service)
+- [x] Build Cryptographic Hash-Chain Audit Engine (`POST /internal/audit`):
+  - [x] Retrieve last log record's `hash` (`prevHash`)
+  - [x] Calculate `hash = SHA256(prevHash + timestamp + action + userId + details)`
+  - [x] Store immutable audit record
+- [x] Implement `GET /api/notifications`, `PUT /api/notifications/:id/read`, and `PUT /api/notifications/read-all`
+- [x] Implement admin viewer `GET /api/audit` (searchable/filterable audit trail)
+- [x] Add `/health` endpoint
 
 ### 4.2 Admin Service (`services/admin-service` on port 3005)
-- [ ] Initialize Express.js app with Prisma client
-- [ ] Create Prisma schema for `admin_schema`:
-  - [ ] `SystemMetric` model (`id`, `metricName`, `metricValue`, `recordedAt`)
-  - [ ] `AdminAction` model (`id`, `adminUserId`, `action`, `targetUserId`, `reason`)
-- [ ] Implement `GET /api/admin/dashboard` (aggregate total users, total transactions today, active accounts, uptime)
-- [ ] Implement `GET /api/admin/users` (list all users with search, pagination, and role filters)
-- [ ] Implement `PUT /api/admin/users/:id/suspend` and `PUT /api/admin/users/:id/verify` (KYC verification)
-- [ ] Implement `GET /api/admin/fraud-alerts` (list flagged transactions from Transaction Service)
-- [ ] Add `/health` endpoint
+- [x] Initialize Express.js app with Prisma client
+- [x] Create Prisma schema for `admin_schema`:
+  - [x] `SystemMetric` model (`id`, `metricName`, `metricValue`, `recordedAt`)
+  - [x] `AdminAction` model (`id`, `adminUserId`, `action`, `targetUserId`, `reason`)
+- [x] Implement `GET /api/admin/dashboard` (aggregate total users, total transactions today, active accounts, uptime)
+- [x] Implement `GET /api/admin/users` (list all users with search, pagination, and role filters)
+- [x] Implement `PUT /api/admin/users/:id/suspend` and `PUT /api/admin/users/:id/verify` (KYC verification)
+- [x] Implement `GET /api/admin/fraud-alerts` (list flagged transactions from Transaction Service)
+- [x] Add `/health` endpoint
 
 ---
 

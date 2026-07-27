@@ -50,7 +50,7 @@ const sendOtpEmail = async (email, otp) => {
   }
 
   try {
-    const url = `${NOTIFICATION_SERVICE_URL}/api/notifications/email`;
+    const url = `${NOTIFICATION_SERVICE_URL}/internal/email`;
     await axios.post(url, {
       to: email,
       subject: 'AegisVault Security: Your Multi-Factor Login OTP',
