@@ -1,0 +1,54 @@
+name: AegisVault CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  quality-check:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci || echo "Skipping until package-lock is generated"
+
+      - name: Run ESLint
+        run: npm run lint --if-present
+
+  unit-tests:
+    name: Microservices Unit & API Tests
+    runs-on: ubuntu-latest
+    needs: quality-check
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Test Suite
+        run: npm test --if-present
+
+  docker-build:
+    name: Docker Compose Build Test
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Config
+        run: docker compose config

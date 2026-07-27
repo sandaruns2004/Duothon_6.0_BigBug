@@ -1,0 +1,196 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aegisvault-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: aegisvault
+      POSTGRES_USER: aegis_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securep@ss123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-schemas.sql:/docker-entrypoint-initdb.d/init-schemas.sql
+    networks:
+      - aegisvault-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis_admin -d aegisvault"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: aegisvault-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - aegisvault-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: aegisvault-api-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:-aegisvault-super-secret-jwt-key-2026}
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - ACCOUNT_SERVICE_URL=http://account-service:3002
+      - TRANSACTION_SERVICE_URL=http://transaction-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+      - ADMIN_SERVICE_URL=http://admin-service:3005
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      account-service:
+        condition: service_started
+      transaction-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      admin-service:
+        condition: service_started
+    networks:
+      - aegisvault-network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: aegisvault-auth-service
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=auth_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-aegisvault-super-secret-jwt-key-2026}
+      - JWT_ACCESS_EXPIRES_IN=15m
+      - JWT_REFRESH_EXPIRES_IN=7d
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aegisvault-network
+
+  account-service:
+    build:
+      context: ./services/account-service
+      dockerfile: Dockerfile
+    container_name: aegisvault-account-service
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=acct_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aegisvault-network
+
+  transaction-service:
+    build:
+      context: ./services/transaction-service
+      dockerfile: Dockerfile
+    container_name: aegisvault-transaction-service
+    restart: always
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=txn_db
+      - ACCOUNT_SERVICE_URL=http://account-service:3002
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+    networks:
+      - aegisvault-network
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: aegisvault-notification-service
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=notif_db
+      - SMTP_HOST=${SMTP_HOST:-smtp.mailtrap.io}
+      - SMTP_PORT=${SMTP_PORT:-2525}
+      - SMTP_USER=${SMTP_USER:-test_smtp_user}
+      - SMTP_PASS=${SMTP_PASS:-test_smtp_password}
+      - SMTP_FROM=${SMTP_FROM:-"AegisVault Security <no-reply@aegisvault.com>"}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aegisvault-network
+
+  admin-service:
+    build:
+      context: ./services/admin-service
+      dockerfile: Dockerfile
+    container_name: aegisvault-admin-service
+    restart: always
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT=3005
+      - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=admin_db
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - TRANSACTION_SERVICE_URL=http://transaction-service:3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aegisvault-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: aegisvault-client
+    restart: always
+    ports:
+      - "8080:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - aegisvault-network
+
+networks:
+  aegisvault-network:
+    name: aegisvault-network
+    driver: bridge
+
+volumes:
+  pgdata:
+    name: aegisvault-pgdata

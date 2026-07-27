@@ -1,0 +1,38 @@
+{
+  "name": "aegisvault-monorepo",
+  "version": "1.0.0",
+  "description": "AegisVault — Secure 5-Microservice Digital Banking Platform (Phase 2)",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "client"
+  ],
+  "scripts": {
+    "docker:up": "docker compose up --build",
+    "docker:up:d": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:clean": "docker compose down -v",
+    "docker:logs": "docker compose logs -f",
+    "docker:ps": "docker compose ps",
+    "test": "echo \"Running workspace tests...\" && jest --passWithNoTests",
+    "lint": "eslint . --ext .js,.ts,.tsx",
+    "seed:demo": "node scripts/seed-demo.js"
+  },
+  "keywords": [
+    "aegisvault",
+    "banking",
+    "microservices",
+    "docker",
+    "nextjs",
+    "express",
+    "postgresql",
+    "redis"
+  ],
+  "author": "AegisVault Team",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5"
+  }
+}

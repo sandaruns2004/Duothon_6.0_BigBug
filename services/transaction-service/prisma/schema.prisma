@@ -1,0 +1,70 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["txn_db"]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+enum TransactionType {
+  TRANSFER
+  PAYMENT
+  DEPOSIT
+  @@schema("txn_db")
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  FLAGGED
+  @@schema("txn_db")
+}
+
+enum FraudAlertStatus {
+  FLAGGED
+  REVIEWED
+  CLEARED
+  @@schema("txn_db")
+}
+
+model Transaction {
+  id              String            @id @default(uuid())
+  userId          String?           @map("user_id")
+  fromAccountId   String            @map("from_account_id")
+  toAccountId     String            @map("to_account_id")
+  amount          Decimal           @db.Decimal(15, 2)
+  currency        String            @default("LKR")
+  type            TransactionType   @default(TRANSFER)
+  status          TransactionStatus @default(PENDING)
+  referenceNumber String            @unique @map("reference_number")
+  fraudFlag       Boolean           @default(false) @map("fraud_flag")
+  description     String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  fraudAlerts     FraudAlert[]
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([createdAt])
+  @@map("transactions")
+  @@schema("txn_db")
+}
+
+model FraudAlert {
+  id            String           @id @default(uuid())
+  transactionId String           @map("transaction_id")
+  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  ruleTriggered String           @map("rule_triggered")
+  riskScore     Int              @default(0) @map("risk_score")
+  status        FraudAlertStatus @default(FLAGGED)
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@map("fraud_alerts")
+  @@schema("txn_db")
+}

@@ -1,0 +1,88 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["acct_db"]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+enum AccountType {
+  SAVINGS
+  CURRENT
+  BUSINESS
+  @@schema("acct_db")
+}
+
+enum AccountStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+  @@schema("acct_db")
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  ACTIVE
+  PAID
+  @@schema("acct_db")
+}
+
+model Account {
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  accountNumber String        @unique @map("account_number")
+  accountType   AccountType   @default(SAVINGS) @map("account_type")
+  balance       Decimal       @default(0.00) @db.Decimal(15, 2)
+  currency      String        @default("LKR")
+  status        AccountStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  loans           Loan[]
+  utilityReceipts UtilityReceipt[]
+
+  @@index([userId])
+  @@map("accounts")
+  @@schema("acct_db")
+}
+
+model Loan {
+  id             String     @id @default(uuid())
+  userId         String     @map("user_id")
+  accountId      String     @map("account_id")
+  account        Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  amount         Decimal    @db.Decimal(15, 2)
+  interestRate   Decimal    @db.Decimal(5, 2) @map("interest_rate")
+  termMonths     Int        @map("term_months")
+  monthlyPayment Decimal    @db.Decimal(15, 2) @map("monthly_payment")
+  status         LoanStatus @default(PENDING)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([accountId])
+  @@map("loans")
+  @@schema("acct_db")
+}
+
+model UtilityReceipt {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  accountId        String   @map("account_id")
+  account          Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  biller           String
+  accountReference String   @map("account_reference")
+  amount           Decimal  @db.Decimal(15, 2)
+  receiptNumber    String   @unique @map("receipt_number")
+  status           String   @default("PAID")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([accountId])
+  @@map("utility_receipts")
+  @@schema("acct_db")
+}
