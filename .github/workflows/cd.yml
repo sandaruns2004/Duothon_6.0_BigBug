@@ -116,7 +116,21 @@ jobs:
           echo "🚀 Deploying Client..."
           az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} --set-env-vars INTERNAL_API_URL=$API_GW_URL NEXT_PUBLIC_API_URL="/api"
 
-      # 10. Run Database Seed via Azure Container App Job
+      # 10. Build and Push Seed Job Image
+      - name: Build and Push Seed Job Image
+        run: |
+          cat <<EOF > Dockerfile.seed
+          FROM node:20-alpine
+          WORKDIR /app
+          COPY . .
+          RUN npm install
+          RUN npm install bcrypt prisma @prisma/client
+          CMD ["node", "scripts/seed-demo.js"]
+          EOF
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:latest -f Dockerfile.seed .
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job --all-tags
+
+      # 11. Run Database Seed via Azure Container App Job
       - name: Seed Database
         run: |
           echo "🌱 Creating Seed Job in Azure Container Apps..."
@@ -129,8 +143,7 @@ jobs:
             --environment ${{ env.ENVIRONMENT_NAME }} \
             --trigger-type Manual \
             --replica-timeout 300 \
-            --image node:20-alpine \
-            --command "/bin/sh" "-c" "wget -qO- https://raw.githubusercontent.com/sandaruns2004/Duothon_6.0_BigBug/main/scripts/run-seed.sh | sh"
+            --image ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:${{ github.sha }}
           
           echo "▶️ Starting the Seed Job..."
           az containerapp job start --name db-seed-job --resource-group ${{ env.RESOURCE_GROUP }}
