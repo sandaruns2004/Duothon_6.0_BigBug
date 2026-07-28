@@ -71,13 +71,47 @@ jobs:
           docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/client:latest -f ./client/Dockerfile ./client
           docker push ${{ env.REGISTRY_LOGIN_SERVER }}/client --all-tags
 
-      # 8. Deploy to Azure Container Apps
+      # 8. Build and Push Postgres
+      - name: Build and Push Postgres Database
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:latest -f ./databases/postgres/Dockerfile .
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/postgres --all-tags
+
+      # 9. Deploy to Azure Container Apps
       - name: Deploy to Azure Container Apps
         run: |
-          az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }}
-          az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }}
-          az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }}
-          az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }}
-          az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }}
-          az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }}
-          az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }}
+          echo "🔑 Attaching Registry Credentials..."
+          APPS=("postgres" "redis" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
+          for app in "${APPS[@]}"; do
+            az containerapp registry set --name $app --resource-group ${{ env.RESOURCE_GROUP }} --server ${{ env.REGISTRY_LOGIN_SERVER }} --username ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_PASSWORD }}
+          done
+
+          echo "🌐 Fetching Internal Service URLs..."
+          PG_FQDN=$(az containerapp show -n postgres -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          REDIS_FQDN=$(az containerapp show -n redis -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
+          AUTH_URL="https://$(az containerapp show -n auth-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          ACCT_URL="https://$(az containerapp show -n account-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          TX_URL="https://$(az containerapp show -n transaction-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          NOTIF_URL="https://$(az containerapp show -n notification-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          ADMIN_URL="https://$(az containerapp show -n admin-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          API_GW_URL="https://$(az containerapp show -n api-gateway -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+
+          echo "⚙️ Setting Shared Environment Variables..."
+          JWT_SECRET="aegisvault-super-secret-jwt-key-2026"
+          DB_BASE="postgresql://aegis_admin:securep@ss123@${PG_FQDN}:5432/aegisvault"
+          REDIS_URL="redis://${REDIS_FQDN}:6379"
+
+          echo "🚀 Deploying Databases..."
+          az containerapp update --name postgres --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:${{ github.sha }}
+          az containerapp update --name redis --resource-group ${{ env.RESOURCE_GROUP }} --image redis:7-alpine
+
+          echo "🚀 Deploying Microservices..."
+          az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=auth_db" REDIS_URL=$REDIS_URL JWT_SECRET=$JWT_SECRET JWT_ACCESS_EXPIRES_IN="15m" JWT_REFRESH_EXPIRES_IN="7d" NOTIFICATION_SERVICE_URL=$NOTIF_URL
+          az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=acct_db"
+          az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=tx_db" ACCOUNT_SERVICE_URL=$ACCT_URL NOTIFICATION_SERVICE_URL=$NOTIF_URL
+          az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=notif_db" SMTP_HOST="smtp.mailtrap.io" SMTP_PORT="2525" SMTP_USER="user" SMTP_PASS="pass" SMTP_FROM="noreply@aegisvault.com"
+          az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=admin_db" AUTH_SERVICE_URL=$AUTH_URL TRANSACTION_SERVICE_URL=$TX_URL
+          az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} --set-env-vars JWT_SECRET=$JWT_SECRET REDIS_URL=$REDIS_URL AUTH_SERVICE_URL=$AUTH_URL ACCOUNT_SERVICE_URL=$ACCT_URL TRANSACTION_SERVICE_URL=$TX_URL NOTIFICATION_SERVICE_URL=$NOTIF_URL ADMIN_SERVICE_URL=$ADMIN_URL
+          
+          echo "🚀 Deploying Client..."
+          az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} --set-env-vars INTERNAL_API_URL=$API_GW_URL NEXT_PUBLIC_API_URL="/api"

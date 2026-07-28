@@ -1,0 +1,33 @@
+#!/bin/bash
+RESOURCE_GROUP="aegisvault-rg"
+LOCATION="eastus"
+ENVIRONMENT="aegisvault-env"
+
+echo "🚀 Provisioning Databases in Azure Container Apps..."
+
+# Create Postgres
+echo "📦 Creating Postgres Database..."
+az containerapp create --name postgres \
+  --resource-group $RESOURCE_GROUP \
+  --environment $ENVIRONMENT \
+  --image postgres:16-alpine \
+  --ingress internal \
+  --target-port 5432 \
+  --transport tcp \
+  --env-vars POSTGRES_DB=aegisvault POSTGRES_USER=aegis_admin POSTGRES_PASSWORD=securep@ss123 \
+  --min-replicas 1 \
+  --max-replicas 1
+
+# Create Redis
+echo "📦 Creating Redis Database..."
+az containerapp create --name redis \
+  --resource-group $RESOURCE_GROUP \
+  --environment $ENVIRONMENT \
+  --image redis:7-alpine \
+  --ingress internal \
+  --target-port 6379 \
+  --transport tcp \
+  --min-replicas 1 \
+  --max-replicas 1
+
+echo "🎉 Database Provisioning Complete!"
