@@ -8,7 +8,7 @@ const { logger } = require('./logger');
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || process.env.DATABASE_URL_TXN || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5433/aegisvault?schema=txn_db'
+      url: process.env.DATABASE_URL || process.env.DATABASE_URL_TXN || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault?schema=txn_db'
     }
   },
   log: [

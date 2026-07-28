@@ -27,10 +27,10 @@ const syncDatabaseSchemas = () => {
 
   for (const svc of services) {
     const schemaPath = path.join(__dirname, '..', 'services', svc.name, 'prisma', 'schema.prisma');
-    const dbUrl = `postgresql://aegis_admin:securep%40ss123@postgres.internal.mangofield-38522f67.eastus.azurecontainerapps.io:5432/aegisvault?schema=${svc.schema}`;
+    const dbUrl = `postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault?schema=${svc.schema}`;
     try {
       console.log(`   -> Syncing schema for ${svc.name} (${svc.schema})...`);
-      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss --skip-generate`, {
+      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
         env: { ...process.env, DATABASE_URL: dbUrl },
         stdio: 'inherit'
       });
