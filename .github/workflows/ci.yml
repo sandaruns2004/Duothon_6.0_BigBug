@@ -22,9 +22,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: |
-            services/auth-service/package-lock.json
-            services/transaction-service/package-lock.json
 
       - name: Install Dependencies & Run Tests - Auth Service
         working-directory: ./services/auth-service
