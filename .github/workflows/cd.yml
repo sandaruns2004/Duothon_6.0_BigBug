@@ -1,0 +1,83 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ main, master ]
+
+env:
+  REGISTRY_LOGIN_SERVER: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+  RESOURCE_GROUP: "aegisvault-rg"
+  ENVIRONMENT_NAME: "aegisvault-env"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      # 1. Build and Push Auth Service
+      - name: Build and Push Auth Service
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:latest -f ./services/auth-service/Dockerfile ./services/auth-service
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service --all-tags
+
+      # 2. Build and Push Account Service
+      - name: Build and Push Account Service
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:latest -f ./services/account-service/Dockerfile ./services/account-service
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/account-service --all-tags
+
+      # 3. Build and Push Transaction Service
+      - name: Build and Push Transaction Service
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:latest -f ./services/transaction-service/Dockerfile ./services/transaction-service
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service --all-tags
+
+      # 4. Build and Push Notification Service
+      - name: Build and Push Notification Service
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:latest -f ./services/notification-service/Dockerfile ./services/notification-service
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service --all-tags
+
+      # 5. Build and Push Admin Service
+      - name: Build and Push Admin Service
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:latest -f ./services/admin-service/Dockerfile ./services/admin-service
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service --all-tags
+
+      # 6. Build and Push API Gateway
+      - name: Build and Push API Gateway
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:latest -f ./services/api-gateway/Dockerfile ./services/api-gateway
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway --all-tags
+
+      # 7. Build and Push Client (Next.js)
+      - name: Build and Push Client Frontend
+        run: |
+          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/client:latest -f ./client/Dockerfile ./client
+          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/client --all-tags
+
+      # 8. Deploy to Azure Container Apps
+      - name: Deploy to Azure Container Apps
+        run: |
+          az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }}
+          az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }}
+          az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }}
+          az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }}
+          az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }}
+          az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }}
+          az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }}

@@ -1,0 +1,68 @@
+#!/bin/bash
+# AegisVault Azure Infrastructure Provisioning Script
+# This script sets up the full microservices architecture on Azure Container Apps.
+
+# Variables
+RESOURCE_GROUP="aegisvault-rg"
+LOCATION="eastus"
+# Generate a random 6-character string to ensure the ACR name is globally unique
+ACR_NAME="aegisvaultacrrw5v9v"
+ENVIRONMENT="aegisvault-env"
+
+echo "🚀 Starting Azure Infrastructure Provisioning..."
+echo "Resource Group: $RESOURCE_GROUP"
+echo "ACR Name: $ACR_NAME"
+
+# 1. Create Resource Group
+echo "📦 1/5 Creating Resource Group..."
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+# 2. Create Azure Container Registry (Basic tier for cost savings)
+echo "🔒 2/5 Creating Azure Container Registry..."
+az acr create --resource-group $RESOURCE_GROUP --name $ACR_NAME --sku Basic --admin-enabled true
+
+# 3. Create Container Apps Environment
+echo "☁️ 3/5 Creating Container Apps Environment (This takes a few minutes)..."
+az containerapp env create --name $ENVIRONMENT --resource-group $RESOURCE_GROUP --location $LOCATION
+
+# Helper function to create empty container apps using a placeholder image
+create_app() {
+  APP_NAME=$1
+  INGRESS_TYPE=$2
+  TARGET_PORT=$3
+  echo "🚀 Creating Container App: $APP_NAME ($INGRESS_TYPE ingress)"
+  
+  az containerapp create \
+    --name $APP_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --environment $ENVIRONMENT \
+    --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
+    --ingress $INGRESS_TYPE \
+    --target-port $TARGET_PORT \
+    --min-replicas 0 \
+    --max-replicas 1
+}
+
+# 4. Create Internal Microservices (No public access from internet)
+echo "⚙️ 4/5 Provisioning Internal Microservices..."
+create_app "auth-service" "internal" 3001
+create_app "account-service" "internal" 3002
+create_app "transaction-service" "internal" 3003
+create_app "notification-service" "internal" 3004
+create_app "admin-service" "internal" 3005
+
+# 5. Create Public Services (Internet accessible)
+echo "🌐 5/5 Provisioning Public Services..."
+create_app "api-gateway" "external" 3000
+create_app "client" "external" 3000
+
+echo "🎉 Provisioning Complete!"
+echo "======================================================"
+echo "IMPORTANT: Add these values to your GitHub Secrets!"
+echo "======================================================"
+echo "REGISTRY_LOGIN_SERVER:  ${ACR_NAME}.azurecr.io"
+echo "REGISTRY_USERNAME:      ${ACR_NAME}"
+echo -n "REGISTRY_PASSWORD:      "
+az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv
+echo "======================================================"
+echo "You can now run the GitHub Actions CD Pipeline."
