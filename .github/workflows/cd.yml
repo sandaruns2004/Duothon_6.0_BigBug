@@ -115,3 +115,9 @@ jobs:
           
           echo "🚀 Deploying Client..."
           az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} --set-env-vars INTERNAL_API_URL=$API_GW_URL NEXT_PUBLIC_API_URL="/api"
+
+      # 10. Run Database Seed
+      - name: Seed Database
+        run: |
+          echo "🌱 Running Database Seed in Postgres Container..."
+          az containerapp exec --name postgres --resource-group ${{ env.RESOURCE_GROUP }} --command "/bin/sh -c 'apk add nodejs npm git && git clone https://github.com/sandaruns2004/Duothon_6.0_BigBug.git /tmp/repo && cd /tmp/repo && npm install bcrypt prisma @prisma/client && node scripts/seed-demo.js'"
