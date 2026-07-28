@@ -40,12 +40,17 @@ const sendHtmlEmail = async ({ to, subject, html, text }) => {
   };
 
   // Always log email dispatch in development/test environments for demo verification
-  if (process.env.NODE_ENV !== 'production' || SMTP_USER === 'test_smtp_user') {
-    logger.info('📧 [DEV / SANDBOX EMAIL DISPATCH]', {
+  if (process.env.NODE_ENV !== 'production' || SMTP_USER === 'test_smtp_user' || SMTP_HOST === 'smtp.mailtrap.io') {
+    logger.info('📧 [DEV / SANDBOX EMAIL DISPATCH] Simulating email delivery instantly (mock mode):', {
       to,
       subject,
-      transport: `${SMTP_HOST}:${SMTP_PORT}`
+      simulated: true
     });
+    return {
+      success: true,
+      messageId: `MOCK-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      simulated: true
+    };
   }
 
   try {

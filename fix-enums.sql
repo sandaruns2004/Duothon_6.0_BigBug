@@ -1,0 +1,30 @@
+DROP SCHEMA IF EXISTS auth_db CASCADE;
+DROP SCHEMA IF EXISTS acct_db CASCADE;
+DROP SCHEMA IF EXISTS txn_db CASCADE;
+DROP SCHEMA IF EXISTS notif_db CASCADE;
+DROP SCHEMA IF EXISTS admin_db CASCADE;
+
+CREATE SCHEMA auth_db;
+CREATE SCHEMA acct_db;
+CREATE SCHEMA txn_db;
+CREATE SCHEMA notif_db;
+CREATE SCHEMA admin_db;
+
+GRANT ALL ON SCHEMA auth_db TO aegis_admin;
+GRANT ALL ON SCHEMA acct_db TO aegis_admin;
+GRANT ALL ON SCHEMA txn_db TO aegis_admin;
+GRANT ALL ON SCHEMA notif_db TO aegis_admin;
+GRANT ALL ON SCHEMA admin_db TO aegis_admin;
+
+CREATE TYPE auth_db."Role" AS ENUM ('CUSTOMER', 'ADMIN', 'OFFICER');
+CREATE TYPE auth_db."KycStatus" AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
+
+CREATE TYPE acct_db."AccountType" AS ENUM ('SAVINGS', 'CURRENT', 'BUSINESS');
+CREATE TYPE acct_db."AccountStatus" AS ENUM ('ACTIVE', 'FROZEN', 'CLOSED');
+CREATE TYPE acct_db."LoanStatus" AS ENUM ('PENDING', 'APPROVED', 'ACTIVE', 'PAID');
+
+CREATE TYPE txn_db."TransactionType" AS ENUM ('TRANSFER', 'PAYMENT', 'DEPOSIT');
+CREATE TYPE txn_db."TransactionStatus" AS ENUM ('PENDING', 'SUCCESS', 'FAILED', 'FLAGGED');
+CREATE TYPE txn_db."FraudAlertStatus" AS ENUM ('FLAGGED', 'REVIEWED', 'CLEARED');
+
+CREATE TYPE notif_db."NotificationChannel" AS ENUM ('EMAIL', 'PUSH');

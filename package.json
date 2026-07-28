@@ -16,7 +16,8 @@
     "docker:ps": "docker compose ps",
     "test": "echo \"Running workspace tests...\" && jest --passWithNoTests",
     "lint": "eslint . --ext .js,.ts,.tsx",
-    "seed:demo": "node scripts/seed-demo.js"
+    "seed:demo": "node scripts/seed-demo.js",
+    "test:e2e": "node scripts/smoke-test.js"
   },
   "keywords": [
     "aegisvault",

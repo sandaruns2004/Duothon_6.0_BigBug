@@ -16,7 +16,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies (including prisma CLI if in dependencies)
-RUN npm ci --only=production
+RUN npm ci --only=production --no-audit --no-fund --loglevel=error
 
 # Copy application source code
 COPY . .

@@ -65,8 +65,17 @@ export default function RegisterPage() {
         router.push('/login?registered=true');
       }
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { error?: string } } };
-      setError(errorObj.response?.data?.error || 'Registration failed. Email, Phone, or NIC may already exist.');
+      const errorObj = err as { response?: { data?: { error?: string, details?: Array<{message: string}> } } };
+      const responseData = errorObj.response?.data;
+      
+      let errorMessage = responseData?.error || 'Registration failed. Email, Phone, or NIC may already exist.';
+      
+      // If it's a validation error with details, append the specific reasons
+      if (responseData?.details && responseData.details.length > 0) {
+        errorMessage = responseData.details.map(d => d.message).join(' | ');
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

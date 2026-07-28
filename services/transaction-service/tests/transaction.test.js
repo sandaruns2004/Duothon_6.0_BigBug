@@ -6,6 +6,7 @@ jest.mock('../src/config/db', () => {
     transaction: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       count: jest.fn(),
     },
@@ -30,6 +31,7 @@ const app = require('../src/index');
 describe('💸 AegisVault Transaction Service Unit & Integration Suite', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    axios.post.mockResolvedValue({ data: { success: true } });
   });
 
   describe('1. Health Check Endpoint (/health)', () => {

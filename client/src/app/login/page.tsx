@@ -23,7 +23,7 @@ export default function LoginPage() {
       const res = await authApi.login({ email, password });
 
       if (res.data?.success) {
-        if (res.data.mfaRequired) {
+        if (res.data.mfaRequired || res.data.requireMfa) {
           localStorage.setItem('tempUserId', res.data.userId);
           localStorage.setItem('tempEmail', email);
           router.push('/verify-otp');
@@ -48,8 +48,8 @@ export default function LoginPage() {
   };
 
   const fillDemoCustomer = () => {
-    setEmail('john.doe@aegisvault.com');
-    setPassword('SecurePass123!');
+    setEmail('customer1@aegisvault.com');
+    setPassword('CustomerSecure2026!');
   };
 
   const fillDemoAdmin = () => {
@@ -99,7 +99,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john.doe@aegisvault.com"
+                  placeholder="customer1@aegisvault.com"
                   className="input-field pl-11"
                 />
               </div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
                 className="py-2 px-3 rounded-lg bg-surface border border-border/80 hover:border-primary/50 text-xs text-gray-300 font-medium transition-colors text-left"
               >
                 <span className="block font-semibold text-white">Customer Demo</span>
-                <span className="text-[10px] text-gray-400">john.doe@aegisvault.com</span>
+                <span className="text-[10px] text-gray-400">customer1@aegisvault.com</span>
               </button>
               <button
                 type="button"

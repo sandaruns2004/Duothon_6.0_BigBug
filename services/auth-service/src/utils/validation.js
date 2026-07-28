@@ -4,7 +4,7 @@ const { z } = require('zod');
 // Zod Validation Schemas for Auth Service & KYC
 // ═══════════════════════════════════════════════════════════════════
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/;
 
 const registerSchema = z.object({
   email: z.string().email('Please provide a valid email address'),
@@ -25,8 +25,12 @@ const loginSchema = z.object({
 });
 
 const verifyOtpSchema = z.object({
-  email: z.string().email('Please provide a valid email address'),
+  email: z.string().email('Please provide a valid email address').optional(),
+  userId: z.string().optional(),
   otp: z.string().length(6, 'OTP must be exactly 6 digits')
+}).refine(data => data.email || data.userId, {
+  message: 'Either email or userId is required',
+  path: ['email']
 });
 
 const refreshTokenSchema = z.object({

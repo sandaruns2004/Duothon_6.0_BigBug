@@ -12,6 +12,33 @@
 const path = require('path');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const { execSync } = require('child_process');
+
+// Automatically push schemas to ensure PostgreSQL tables exist before seeding
+const syncDatabaseSchemas = () => {
+  console.log('🔄 [0/4] Synchronizing Prisma database schemas with PostgreSQL...');
+  const services = [
+    { name: 'admin-service', schema: 'admin_db' },
+    { name: 'account-service', schema: 'acct_db' },
+    { name: 'transaction-service', schema: 'txn_db' },
+    { name: 'notification-service', schema: 'notif_db' },
+    { name: 'auth-service', schema: 'auth_db' }
+  ];
+
+  for (const svc of services) {
+    const schemaPath = path.join(__dirname, '..', 'services', svc.name, 'prisma', 'schema.prisma');
+    const dbUrl = `postgresql://aegis_admin:securep%40ss123@127.0.0.1:5433/aegisvault?schema=${svc.schema}`;
+    try {
+      console.log(`   -> Syncing schema for ${svc.name} (${svc.schema})...`);
+      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss --skip-generate`, {
+        env: { ...process.env, DATABASE_URL: dbUrl },
+        stdio: 'inherit'
+      });
+    } catch (err) {
+      console.error(`   ⚠️ Failed to sync ${svc.name}:`, err.message);
+    }
+  }
+};
 
 // Helper to safely load Prisma clients from microservices
 const loadPrisma = (servicePath) => {
@@ -35,6 +62,7 @@ const hashPassword = async (pwd) => {
 
 const runSeed = async () => {
   console.log('🚀 [AegisVault Seed] Starting database prepopulation for Demo Environment...');
+  syncDatabaseSchemas();
 
   if (!authPrisma || !accountPrisma || !txnPrisma || !notifPrisma) {
     console.warn('⚠️ One or more Prisma clients could not be loaded. Ensure `npm install` and `prisma generate` were run in all services.');

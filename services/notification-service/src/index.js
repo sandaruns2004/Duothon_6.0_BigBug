@@ -1,4 +1,4 @@
-require('dotenv').config();
+try { require('dotenv').config(); } catch (e) {}
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -33,6 +33,8 @@ app.get('/health', (req, res) => {
 // Mount Routes
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/audit', auditRoutes);
+app.use('/', auditRoutes);
 app.use('/internal', internalRoutes);
 // Alias for reverse-proxy convenience
 app.use('/api/notifications/internal', internalRoutes);

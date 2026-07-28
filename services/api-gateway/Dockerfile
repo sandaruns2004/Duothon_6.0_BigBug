@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --only=production
+RUN npm install --omit=dev --no-audit --no-fund --loglevel=error
 COPY . .
 EXPOSE 3000
 CMD ["node", "src/index.js"]

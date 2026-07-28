@@ -40,7 +40,7 @@ export default function VerifyOtpPage() {
     setLoading(true);
 
     try {
-      const res = await authApi.verifyOtp({ userId, otp });
+      const res = await authApi.verifyOtp({ email, userId, otp });
 
       if (res.data?.success && res.data?.accessToken) {
         setTokens(res.data.accessToken, res.data.refreshToken, res.data.user?.role);
