@@ -10,17 +10,49 @@ env:
   ENVIRONMENT_NAME: "aegisvault-env"
 
 jobs:
-  build-and-deploy:
+  changes:
     runs-on: ubuntu-latest
-    
+    outputs:
+      modified: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Detect Changed Paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            auth-service: 'services/auth-service/**'
+            account-service: 'services/account-service/**'
+            transaction-service: 'services/transaction-service/**'
+            notification-service: 'services/notification-service/**'
+            admin-service: 'services/admin-service/**'
+            api-gateway: 'services/api-gateway/**'
+            client: 'client/**'
+            postgres: 
+              - 'databases/postgres/**'
+              - 'scripts/init-schemas.sql'
+            seed-job:
+              - 'scripts/seed-demo.js'
+              - 'Dockerfile.seed'
+              - 'services/*/prisma/schema.prisma'
+              - 'databases/postgres/**'
+              - 'scripts/init-schemas.sql'
+
+  build-and-push:
+    needs: changes
+    if: ${{ needs.changes.outputs.modified != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.modified) }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Azure Container Registry
         uses: azure/docker-login@v1
@@ -29,63 +61,55 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      # 1. Build and Push Auth Service
-      - name: Build and Push Auth Service
+      - name: Define Build Context and Dockerfile
+        id: build-vars
         run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:latest -f ./services/auth-service/Dockerfile ./services/auth-service
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service --all-tags
+          if [ "${{ matrix.service }}" == "postgres" ]; then
+            echo "context=." >> $GITHUB_OUTPUT
+            echo "dockerfile=./databases/postgres/Dockerfile" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.service }}" == "client" ]; then
+            echo "context=./client" >> $GITHUB_OUTPUT
+            echo "dockerfile=./client/Dockerfile" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.service }}" == "seed-job" ]; then
+            echo "context=." >> $GITHUB_OUTPUT
+            cat <<EOF > Dockerfile.seed
+            FROM node:20-alpine
+            WORKDIR /app
+            COPY . .
+            RUN npm install
+            RUN npm install bcrypt prisma @prisma/client
+            CMD ["node", "scripts/seed-demo.js"]
+            EOF
+            echo "dockerfile=./Dockerfile.seed" >> $GITHUB_OUTPUT
+          else
+            echo "context=./services/${{ matrix.service }}" >> $GITHUB_OUTPUT
+            echo "dockerfile=./services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+          fi
 
-      # 2. Build and Push Account Service
-      - name: Build and Push Account Service
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.build-vars.outputs.context }}
+          file: ${{ steps.build-vars.outputs.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}
+            ${{ env.REGISTRY_LOGIN_SERVER }}/${{ matrix.service }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    needs: [changes, build-and-push]
+    if: ${{ needs.changes.outputs.modified != '[]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Fetch Internal Service URLs
         run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:latest -f ./services/account-service/Dockerfile ./services/account-service
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/account-service --all-tags
-
-      # 3. Build and Push Transaction Service
-      - name: Build and Push Transaction Service
-        run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:latest -f ./services/transaction-service/Dockerfile ./services/transaction-service
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service --all-tags
-
-      # 4. Build and Push Notification Service
-      - name: Build and Push Notification Service
-        run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:latest -f ./services/notification-service/Dockerfile ./services/notification-service
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service --all-tags
-
-      # 5. Build and Push Admin Service
-      - name: Build and Push Admin Service
-        run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:latest -f ./services/admin-service/Dockerfile ./services/admin-service
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service --all-tags
-
-      # 6. Build and Push API Gateway
-      - name: Build and Push API Gateway
-        run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:latest -f ./services/api-gateway/Dockerfile ./services/api-gateway
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway --all-tags
-
-      # 7. Build and Push Client (Next.js)
-      - name: Build and Push Client Frontend
-        run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/client:latest -f ./client/Dockerfile ./client
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/client --all-tags
-
-      # 8. Build and Push Postgres
-      - name: Build and Push Postgres Database
-        run: |
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:latest -f ./databases/postgres/Dockerfile .
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/postgres --all-tags
-
-      # 9. Deploy to Azure Container Apps
-      - name: Deploy to Azure Container Apps
-        run: |
-          echo "🔑 Attaching Registry Credentials..."
-          APPS=("postgres" "redis" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
-          for app in "${APPS[@]}"; do
-            az containerapp registry set --name $app --resource-group ${{ env.RESOURCE_GROUP }} --server ${{ env.REGISTRY_LOGIN_SERVER }} --username ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_PASSWORD }}
-          done
-
           echo "🌐 Fetching Internal Service URLs..."
           PG_FQDN=$(az containerapp show -n postgres -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
           REDIS_FQDN=$(az containerapp show -n redis -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
@@ -95,60 +119,108 @@ jobs:
           NOTIF_URL="https://$(az containerapp show -n notification-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
           ADMIN_URL="https://$(az containerapp show -n admin-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
           API_GW_URL="https://$(az containerapp show -n api-gateway -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          
+          echo "PG_FQDN=$PG_FQDN" >> $GITHUB_ENV
+          echo "REDIS_FQDN=$REDIS_FQDN" >> $GITHUB_ENV
+          echo "AUTH_URL=$AUTH_URL" >> $GITHUB_ENV
+          echo "ACCT_URL=$ACCT_URL" >> $GITHUB_ENV
+          echo "TX_URL=$TX_URL" >> $GITHUB_ENV
+          echo "NOTIF_URL=$NOTIF_URL" >> $GITHUB_ENV
+          echo "ADMIN_URL=$ADMIN_URL" >> $GITHUB_ENV
+          echo "API_GW_URL=$API_GW_URL" >> $GITHUB_ENV
 
-          echo "⚙️ Setting Shared Environment Variables..."
-          JWT_SECRET="aegisvault-super-secret-jwt-key-2026"
-          DB_BASE="postgresql://aegis_admin:securep%40ss123@${PG_FQDN}:5432/aegisvault"
+      - name: Parallel Deployments
+        env:
+          MODIFIED: ${{ needs.changes.outputs.modified }}
+        run: |
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          if [ -z "$JWT_SECRET" ]; then JWT_SECRET="aegisvault-super-secret-jwt-key-2026"; fi
+          
+          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@${PG_FQDN}:5432/aegisvault"
+          
+          SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}"
+          if [ -z "$SMTP_USERNAME" ]; then SMTP_USERNAME="user"; fi
+          
+          SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
+          if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
+
           REDIS_URL="redis://${REDIS_FQDN}:6379"
 
-          echo "🚀 Deploying Databases..."
-          az containerapp update --name postgres --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:${{ github.sha }}
-          az containerapp update --name redis --resource-group ${{ env.RESOURCE_GROUP }} --image redis:7-alpine
+          echo "🔐 Setting registry credentials sequentially to avoid conflicts..."
+          APPS=("postgres" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
+          for app in "${APPS[@]}"; do
+            if [[ "$MODIFIED" == *"$app"* ]]; then
+              az containerapp registry set --name $app --resource-group ${{ env.RESOURCE_GROUP }} --server ${{ env.REGISTRY_LOGIN_SERVER }} --username ${{ secrets.REGISTRY_USERNAME }} --password ${{ secrets.REGISTRY_PASSWORD }}
+            fi
+          done
 
-          echo "🚀 Deploying Microservices..."
-          az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=auth_db" REDIS_URL=$REDIS_URL JWT_SECRET=$JWT_SECRET JWT_ACCESS_EXPIRES_IN="15m" JWT_REFRESH_EXPIRES_IN="7d" NOTIFICATION_SERVICE_URL=$NOTIF_URL
-          az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=acct_db"
-          az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=tx_db" ACCOUNT_SERVICE_URL=$ACCT_URL NOTIFICATION_SERVICE_URL=$NOTIF_URL
-          az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=notif_db" SMTP_HOST="smtp.mailtrap.io" SMTP_PORT="2525" SMTP_USER="user" SMTP_PASS="pass" SMTP_FROM="noreply@aegisvault.com"
-          az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=admin_db" AUTH_SERVICE_URL=$AUTH_URL TRANSACTION_SERVICE_URL=$TX_URL
-          az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} --set-env-vars JWT_SECRET=$JWT_SECRET REDIS_URL=$REDIS_URL AUTH_SERVICE_URL=$AUTH_URL ACCOUNT_SERVICE_URL=$ACCT_URL TRANSACTION_SERVICE_URL=$TX_URL NOTIFICATION_SERVICE_URL=$NOTIF_URL ADMIN_SERVICE_URL=$ADMIN_URL
+          echo "🚀 Deploying modified services in parallel..."
           
-          echo "🚀 Deploying Client..."
-          az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} --set-env-vars INTERNAL_API_URL=$API_GW_URL NEXT_PUBLIC_API_URL="/api"
+          if [[ "$MODIFIED" == *"postgres"* ]]; then
+            az containerapp update --name postgres --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/postgres:${{ github.sha }} &
+          fi
+          
+          if [[ "$MODIFIED" == *"auth-service"* ]]; then
+            az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=auth_db" REDIS_URL="$REDIS_URL" JWT_SECRET="$JWT_SECRET" JWT_ACCESS_EXPIRES_IN="15m" JWT_REFRESH_EXPIRES_IN="7d" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
+          fi
+          
+          if [[ "$MODIFIED" == *"account-service"* ]]; then
+            az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=acct_db" &
+          fi
+          
+          if [[ "$MODIFIED" == *"transaction-service"* ]]; then
+            az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=tx_db" ACCOUNT_SERVICE_URL="$ACCT_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
+          fi
+          
+          if [[ "$MODIFIED" == *"notification-service"* ]]; then
+            az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=notif_db" SMTP_HOST="smtp.mailtrap.io" SMTP_PORT="2525" SMTP_USER="$SMTP_USERNAME" SMTP_PASS="$SMTP_PASSWORD" SMTP_FROM="noreply@aegisvault.com" &
+          fi
+          
+          if [[ "$MODIFIED" == *"admin-service"* ]]; then
+            az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}?schema=admin_db" AUTH_SERVICE_URL="$AUTH_URL" TRANSACTION_SERVICE_URL="$TX_URL" &
+          fi
+          
+          if [[ "$MODIFIED" == *"api-gateway"* ]]; then
+            az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} --set-env-vars JWT_SECRET="$JWT_SECRET" REDIS_URL="$REDIS_URL" AUTH_SERVICE_URL="$AUTH_URL" ACCOUNT_SERVICE_URL="$ACCT_URL" TRANSACTION_SERVICE_URL="$TX_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" ADMIN_SERVICE_URL="$ADMIN_URL" &
+          fi
+          
+          if [[ "$MODIFIED" == *"client"* ]]; then
+            az containerapp update --name client --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/client:${{ github.sha }} --set-env-vars INTERNAL_API_URL="$API_GW_URL" NEXT_PUBLIC_API_URL="/api" &
+          fi
+          
+          # Wait for all background az containerapp updates to finish
+          wait
+          echo "✅ All Container Apps updated successfully."
 
-      # 10. Build and Push Seed Job Image
-      - name: Build and Push Seed Job Image
+      - name: Deploy Seed Job
+        env:
+          MODIFIED: ${{ needs.changes.outputs.modified }}
         run: |
-          cat <<EOF > Dockerfile.seed
-          FROM node:20-alpine
-          WORKDIR /app
-          COPY . .
-          RUN npm install
-          RUN npm install bcrypt prisma @prisma/client
-          CMD ["node", "scripts/seed-demo.js"]
-          EOF
-          docker build -t ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:${{ github.sha }} -t ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:latest -f Dockerfile.seed .
-          docker push ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job --all-tags
-
-      # 11. Run Database Seed via Azure Container App Job
-      - name: Seed Database
-        run: |
-          echo "🌱 Creating Seed Job in Azure Container Apps..."
-          
-          az containerapp job delete --name db-seed-job --resource-group ${{ env.RESOURCE_GROUP }} --yes || true
-
-          az containerapp job create \
-            --name db-seed-job \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --environment ${{ env.ENVIRONMENT_NAME }} \
-            --trigger-type Manual \
-            --replica-timeout 300 \
-            --replica-retry-limit 0 \
-            --env-vars "DATABASE_URL=${DB_BASE}" \
-            --registry-server ${{ env.REGISTRY_LOGIN_SERVER }} \
-            --registry-username ${{ secrets.REGISTRY_USERNAME }} \
-            --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
-            --image ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:${{ github.sha }}
-          
-          echo "▶️ Starting the Seed Job..."
-          az containerapp job start --name db-seed-job --resource-group ${{ env.RESOURCE_GROUP }}
+          if [[ "$MODIFIED" == *"seed-job"* || "$MODIFIED" == *"postgres"* ]]; then
+            DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+            if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
+            DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@${PG_FQDN}:5432/aegisvault"
+            
+            echo "🌱 Creating Seed Job in Azure Container Apps..."
+            
+            az containerapp job delete --name db-seed-job --resource-group ${{ env.RESOURCE_GROUP }} --yes || true
+            az containerapp job create \
+              --name db-seed-job \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ${{ env.ENVIRONMENT_NAME }} \
+              --trigger-type Manual \
+              --replica-timeout 300 \
+              --replica-retry-limit 0 \
+              --env-vars "DATABASE_URL=${DB_BASE}" \
+              --registry-server ${{ env.REGISTRY_LOGIN_SERVER }} \
+              --registry-username ${{ secrets.REGISTRY_USERNAME }} \
+              --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
+              --image ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:${{ github.sha }}
+              
+            echo "▶️ Starting the Seed Job..."
+            az containerapp job start --name db-seed-job --resource-group ${{ env.RESOURCE_GROUP }}
+          else
+            echo "⏭️ Skipping Seed Job (not modified)."
+          fi
