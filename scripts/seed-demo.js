@@ -42,10 +42,15 @@ const syncDatabaseSchemas = () => {
 };
 
 // Helper to safely load Prisma clients from microservices
-const loadPrisma = (servicePath) => {
+const loadPrisma = (servicePath, schemaName) => {
   try {
-    const dbModule = require(path.join(__dirname, '..', servicePath, 'src/config/db'));
-    return dbModule.prisma;
+    const { PrismaClient } = require(path.join(__dirname, '..', servicePath, 'prisma/generated/client'));
+    const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault';
+    const dbUrl = baseDbUrl.includes('schema=') ? baseDbUrl : `${baseDbUrl.split('?')[0]}?schema=${schemaName}`;
+    
+    return new PrismaClient({
+      datasources: { db: { url: dbUrl } }
+    });
   } catch (err) {
     console.error(`❌ Could not load Prisma client for ${servicePath}:`, err.message);
     return null;
@@ -60,10 +65,10 @@ const runSeed = async () => {
   console.log('🚀 [AegisVault Seed] Starting database prepopulation for Demo Environment...');
   syncDatabaseSchemas();
 
-  const authPrisma = loadPrisma('services/auth-service');
-  const accountPrisma = loadPrisma('services/account-service');
-  const txnPrisma = loadPrisma('services/transaction-service');
-  const notifPrisma = loadPrisma('services/notification-service');
+  const authPrisma = loadPrisma('services/auth-service', 'auth_db');
+  const accountPrisma = loadPrisma('services/account-service', 'acct_db');
+  const txnPrisma = loadPrisma('services/transaction-service', 'txn_db');
+  const notifPrisma = loadPrisma('services/notification-service', 'notif_db');
 
   if (!authPrisma || !accountPrisma || !txnPrisma || !notifPrisma) {
     console.warn('⚠️ One or more Prisma clients could not be loaded. Ensure `npm install` and `prisma generate` were run in all services.');

@@ -65,14 +65,19 @@ export default function RegisterPage() {
         router.push('/login?registered=true');
       }
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { error?: string, details?: Array<{message: string}> } } };
+      const errorObj = err as { response?: { data?: any; status?: number; statusText?: string } };
       const responseData = errorObj.response?.data;
       
-      let errorMessage = responseData?.error || 'Registration failed. Email, Phone, or NIC may already exist.';
+      let errorMessage = 'Registration failed. Email, Phone, or NIC may already exist.';
       
-      // If it's a validation error with details, append the specific reasons
-      if (responseData?.details && responseData.details.length > 0) {
-        errorMessage = responseData.details.map(d => d.message).join(' | ');
+      if (responseData) {
+        if (typeof responseData === 'string' && responseData.includes('<html')) {
+          errorMessage = `Service Unavailable (Proxy Error: ${errorObj.response?.status || 500}). Please check API connection.`;
+        } else if (responseData.details && Array.isArray(responseData.details) && responseData.details.length > 0) {
+          errorMessage = responseData.details.map((d: any) => d.message).join(' | ');
+        } else if (responseData.error) {
+          errorMessage = responseData.error;
+        }
       }
       
       setError(errorMessage);

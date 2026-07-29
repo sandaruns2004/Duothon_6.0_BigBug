@@ -38,10 +38,20 @@ export default function LoginPage() {
         }
       }
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { error?: string } } };
-      setError(
-        errorObj.response?.data?.error || 'Invalid credentials or account locked. Please try again.'
-      );
+      const errorObj = err as { response?: { data?: any; status?: number; statusText?: string } };
+      let exactError = 'Invalid credentials or account locked. Please try again.';
+      
+      if (errorObj.response?.data) {
+        if (typeof errorObj.response.data === 'string' && errorObj.response.data.includes('<html')) {
+          // If the proxy returns an HTML page (e.g. 502/404 from Next.js server)
+          exactError = `Service Unavailable (Proxy Error: ${errorObj.response.status || 500}). Please check API connection.`;
+        } else if (errorObj.response.data.error) {
+          // If the backend returns a JSON error message
+          exactError = errorObj.response.data.error;
+        }
+      }
+      
+      setError(exactError);
     } finally {
       setLoading(false);
     }

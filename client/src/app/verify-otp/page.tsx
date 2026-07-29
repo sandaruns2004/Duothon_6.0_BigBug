@@ -55,8 +55,18 @@ export default function VerifyOtpPage() {
         }
       }
     } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { error?: string } } };
-      setError(errorObj.response?.data?.error || 'Invalid or expired OTP code.');
+      const errorObj = err as { response?: { data?: any; status?: number; statusText?: string } };
+      let exactError = 'Invalid or expired OTP code.';
+      
+      if (errorObj.response?.data) {
+        if (typeof errorObj.response.data === 'string' && errorObj.response.data.includes('<html')) {
+          exactError = `Service Unavailable (Proxy Error: ${errorObj.response.status || 500}). Please check API connection.`;
+        } else if (errorObj.response.data.error) {
+          exactError = errorObj.response.data.error;
+        }
+      }
+      
+      setError(exactError);
     } finally {
       setLoading(false);
     }
