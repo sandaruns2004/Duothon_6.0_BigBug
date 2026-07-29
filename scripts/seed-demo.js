@@ -28,7 +28,8 @@ const syncDatabaseSchemas = () => {
   for (const svc of services) {
     const schemaPath = path.join(__dirname, '..', 'services', svc.name, 'prisma', 'schema.prisma');
     const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault';
-    const dbUrl = `${baseDbUrl.split('?')[0]}?schema=${svc.schema}`;
+    const separator = baseDbUrl.includes('?') ? '&' : '?';
+    const dbUrl = `${baseDbUrl}${separator}schema=${svc.schema}`;
     try {
       console.log(`   -> Syncing schema for ${svc.name} (${svc.schema})...`);
       execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
@@ -46,7 +47,8 @@ const loadPrisma = (servicePath, schemaName) => {
   try {
     const { PrismaClient } = require(path.join(__dirname, '..', servicePath, 'prisma/generated/client'));
     const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault';
-    const dbUrl = baseDbUrl.includes('schema=') ? baseDbUrl : `${baseDbUrl.split('?')[0]}?schema=${schemaName}`;
+    const separator = baseDbUrl.includes('?') ? '&' : '?';
+    const dbUrl = baseDbUrl.includes('schema=') ? baseDbUrl : `${baseDbUrl}${separator}schema=${schemaName}`;
     
     return new PrismaClient({
       datasources: { db: { url: dbUrl } }
