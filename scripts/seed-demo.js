@@ -52,11 +52,6 @@ const loadPrisma = (servicePath) => {
   }
 };
 
-const authPrisma = loadPrisma('services/auth-service');
-const accountPrisma = loadPrisma('services/account-service');
-const txnPrisma = loadPrisma('services/transaction-service');
-const notifPrisma = loadPrisma('services/notification-service');
-
 const hashPassword = async (pwd) => {
   return await bcrypt.hash(pwd, 12);
 };
@@ -64,6 +59,11 @@ const hashPassword = async (pwd) => {
 const runSeed = async () => {
   console.log('🚀 [AegisVault Seed] Starting database prepopulation for Demo Environment...');
   syncDatabaseSchemas();
+
+  const authPrisma = loadPrisma('services/auth-service');
+  const accountPrisma = loadPrisma('services/account-service');
+  const txnPrisma = loadPrisma('services/transaction-service');
+  const notifPrisma = loadPrisma('services/notification-service');
 
   if (!authPrisma || !accountPrisma || !txnPrisma || !notifPrisma) {
     console.warn('⚠️ One or more Prisma clients could not be loaded. Ensure `npm install` and `prisma generate` were run in all services.');
