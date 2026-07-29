@@ -1,9 +1,74 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { execSync } = require('child_process');
+const path = require('path');
+const bcrypt = require('bcrypt');
+const { PrismaClient } = require('../prisma/generated/client');
 const { logger, requestLogger } = require('./config/logger');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
+
+const prisma = new PrismaClient();
+
+const initDatabaseAndSeed = async () => {
+  try {
+    const schemaPath = path.join(__dirname, '../prisma/schema.prisma');
+    if (process.env.DATABASE_URL) {
+      logger.info('🔄 [Auth Service] Syncing schema with database...');
+      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
+        env: { ...process.env },
+        stdio: 'inherit'
+      });
+      logger.info('✅ [Auth Service] Schema synchronized successfully.');
+
+      const demoEmail = 'customer1@aegisvault.com';
+      const existingUser = await prisma.user.findUnique({ where: { email: demoEmail } });
+      if (!existingUser) {
+        logger.info('🌱 [Auth Service] Seeding demo customer...');
+        const passwordHash = await bcrypt.hash('CustomerSecure2026!', 12);
+        await prisma.user.create({
+          data: {
+            id: 'usr-customer-demo-001',
+            email: demoEmail,
+            phone: '+1555010001',
+            nic: '199001010001',
+            passwordHash,
+            role: 'CUSTOMER',
+            kycStatus: 'VERIFIED',
+            failedAttempts: 0,
+            isLocked: false
+          }
+        });
+        logger.info('✅ [Auth Service] Demo customer seeded successfully.');
+      }
+
+      const adminEmail = 'admin@aegisvault.com';
+      const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+      if (!existingAdmin) {
+        logger.info('🌱 [Auth Service] Seeding demo admin...');
+        const passwordHash = await bcrypt.hash('AdminSecure2026!', 12);
+        await prisma.user.create({
+          data: {
+            id: 'usr-admin-demo-001',
+            email: adminEmail,
+            phone: '+1555010002',
+            nic: '199001010002',
+            passwordHash,
+            role: 'ADMIN',
+            kycStatus: 'VERIFIED',
+            failedAttempts: 0,
+            isLocked: false
+          }
+        });
+        logger.info('✅ [Auth Service] Demo admin seeded successfully.');
+      }
+    }
+  } catch (err) {
+    logger.warn('⚠️ [Auth Service] Database initialization warning:', { error: err.message });
+  }
+};
+
 
 // ═══════════════════════════════════════════════════════════════════
 // AegisVault Auth Service (Port 3001)
@@ -74,9 +139,12 @@ app.use((err, req, res, next) => {
 
 // Start Auth Service Server
 if (require.main === module) {
-  app.listen(PORT, () => {
-    logger.info(`🔐 AegisVault Auth Service running on port ${PORT}`);
+  initDatabaseAndSeed().finally(() => {
+    app.listen(PORT, () => {
+      logger.info(`🔐 AegisVault Auth Service running on port ${PORT}`);
+    });
   });
 }
 
 module.exports = app;
+

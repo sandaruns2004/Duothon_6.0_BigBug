@@ -20,7 +20,9 @@ const createServiceProxy = (targetUrl, serviceName) => {
   return createProxyMiddleware({
     target: targetUrl,
     changeOrigin: true,
+    secure: false,
     xfwd: true,
+
     on: {
       proxyReq: (proxyReq, req, res) => {
         // Forward injected user identity headers to downstream service

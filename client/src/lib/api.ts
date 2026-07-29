@@ -6,8 +6,9 @@ import Cookies from 'js-cookie';
 // ═══════════════════════════════════════════════════════════════════
 
 const API_BASE_URL = typeof window === 'undefined' 
-  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000') 
+  ? (process.env.INTERNAL_API_URL || 'http://api-gateway:3000') 
   : '';
+
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
