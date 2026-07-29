@@ -72,14 +72,12 @@ jobs:
             echo "dockerfile=./client/Dockerfile" >> $GITHUB_OUTPUT
           elif [ "${{ matrix.service }}" == "seed-job" ]; then
             echo "context=." >> $GITHUB_OUTPUT
-            cat <<'EOF' > Dockerfile.seed
-FROM node:20-alpine
-WORKDIR /app
-COPY . .
-RUN npm install
-RUN npm install bcrypt prisma @prisma/client
-CMD ["node", "scripts/seed-demo.js"]
-EOF
+            echo 'FROM node:20-alpine' > Dockerfile.seed
+            echo 'WORKDIR /app' >> Dockerfile.seed
+            echo 'COPY . .' >> Dockerfile.seed
+            echo 'RUN npm install' >> Dockerfile.seed
+            echo 'RUN npm install bcrypt prisma @prisma/client' >> Dockerfile.seed
+            echo 'CMD ["node", "scripts/seed-demo.js"]' >> Dockerfile.seed
             echo "dockerfile=./Dockerfile.seed" >> $GITHUB_OUTPUT
           else
             echo "context=./services/${{ matrix.service }}" >> $GITHUB_OUTPUT
