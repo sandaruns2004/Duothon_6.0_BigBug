@@ -176,6 +176,14 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-3.0.x"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [
@@ -194,6 +202,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -202,8 +211,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"auth_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum Role {\n  CUSTOMER\n  ADMIN\n  OFFICER\n\n  @@schema(\"auth_db\")\n}\n\nenum KycStatus {\n  PENDING\n  VERIFIED\n  REJECTED\n\n  @@schema(\"auth_db\")\n}\n\nmodel User {\n  id             String    @id @default(uuid())\n  email          String    @unique\n  phone          String    @unique\n  nic            String    @unique\n  passwordHash   String    @map(\"password_hash\")\n  role           Role      @default(CUSTOMER)\n  failedAttempts Int       @default(0) @map(\"failed_attempts\")\n  isLocked       Boolean   @default(false) @map(\"is_locked\")\n  kycStatus      KycStatus @default(PENDING) @map(\"kyc_status\")\n  kycDocument    String?   @map(\"kyc_document\")\n  createdAt      DateTime  @default(now()) @map(\"created_at\")\n  updatedAt      DateTime  @updatedAt @map(\"updated_at\")\n\n  refreshTokens RefreshToken[]\n  otpRecords    OtpRecord[]\n\n  @@map(\"users\")\n  @@schema(\"auth_db\")\n}\n\nmodel RefreshToken {\n  id        String   @id @default(uuid())\n  userId    String   @map(\"user_id\")\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  tokenHash String   @unique @map(\"token_hash\")\n  expiresAt DateTime @map(\"expires_at\")\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@map(\"refresh_tokens\")\n  @@schema(\"auth_db\")\n}\n\nmodel OtpRecord {\n  id        String   @id @default(uuid())\n  userId    String   @map(\"user_id\")\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  otpHash   String   @map(\"otp_hash\")\n  type      String   @default(\"MFA_LOGIN\")\n  expiresAt DateTime @map(\"expires_at\")\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@map(\"otp_records\")\n  @@schema(\"auth_db\")\n}\n",
-  "inlineSchemaHash": "f6b2d19548118f7e3b291e626f79c7cad414c85c32d30f860dc5685189612610",
+  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"auth_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  binaryTargets   = [\"native\", \"debian-openssl-3.0.x\", \"linux-musl-openssl-3.0.x\"]\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum Role {\n  CUSTOMER\n  ADMIN\n  OFFICER\n\n  @@schema(\"auth_db\")\n}\n\nenum KycStatus {\n  PENDING\n  VERIFIED\n  REJECTED\n\n  @@schema(\"auth_db\")\n}\n\nmodel User {\n  id             String    @id @default(uuid())\n  email          String    @unique\n  phone          String    @unique\n  nic            String    @unique\n  passwordHash   String    @map(\"password_hash\")\n  role           Role      @default(CUSTOMER)\n  failedAttempts Int       @default(0) @map(\"failed_attempts\")\n  isLocked       Boolean   @default(false) @map(\"is_locked\")\n  kycStatus      KycStatus @default(PENDING) @map(\"kyc_status\")\n  kycDocument    String?   @map(\"kyc_document\")\n  createdAt      DateTime  @default(now()) @map(\"created_at\")\n  updatedAt      DateTime  @updatedAt @map(\"updated_at\")\n\n  refreshTokens RefreshToken[]\n  otpRecords    OtpRecord[]\n\n  @@map(\"users\")\n  @@schema(\"auth_db\")\n}\n\nmodel RefreshToken {\n  id        String   @id @default(uuid())\n  userId    String   @map(\"user_id\")\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  tokenHash String   @unique @map(\"token_hash\")\n  expiresAt DateTime @map(\"expires_at\")\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@map(\"refresh_tokens\")\n  @@schema(\"auth_db\")\n}\n\nmodel OtpRecord {\n  id        String   @id @default(uuid())\n  userId    String   @map(\"user_id\")\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  otpHash   String   @map(\"otp_hash\")\n  type      String   @default(\"MFA_LOGIN\")\n  expiresAt DateTime @map(\"expires_at\")\n  createdAt DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@map(\"otp_records\")\n  @@schema(\"auth_db\")\n}\n",
+  "inlineSchemaHash": "1ae5d1d708203fb1097d2fe1f0d3f6696c2a385a721157aae387e03ef9c2804f",
   "copyEngine": true
 }
 
@@ -243,6 +252,14 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "query_engine-windows.dll.node");
 path.join(process.cwd(), "prisma/generated/client/query_engine-windows.dll.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
+path.join(process.cwd(), "prisma/generated/client/libquery_engine-debian-openssl-3.0.x.so.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-linux-musl-openssl-3.0.x.so.node");
+path.join(process.cwd(), "prisma/generated/client/libquery_engine-linux-musl-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
 path.join(process.cwd(), "prisma/generated/client/schema.prisma")

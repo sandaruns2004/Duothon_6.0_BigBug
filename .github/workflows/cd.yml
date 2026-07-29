@@ -73,8 +73,9 @@ jobs:
             echo 'FROM node:20-alpine' > Dockerfile.seed
             echo 'WORKDIR /app' >> Dockerfile.seed
             echo 'COPY package*.json ./ ' >> Dockerfile.seed
-            echo 'RUN npm install --no-audit --no-fund --loglevel=error' >> Dockerfile.seed
+            echo 'RUN npm install --no-audit --no-fund --loglevel=error && npm install --no-audit --no-fund --loglevel=error prisma@5.11.0 @prisma/client@5.11.0 bcrypt@5.1.1' >> Dockerfile.seed
             echo 'COPY . .' >> Dockerfile.seed
+
             echo 'RUN npx prisma generate --schema=./services/auth-service/prisma/schema.prisma' >> Dockerfile.seed
             echo 'RUN npx prisma generate --schema=./services/account-service/prisma/schema.prisma' >> Dockerfile.seed
             echo 'RUN npx prisma generate --schema=./services/transaction-service/prisma/schema.prisma' >> Dockerfile.seed

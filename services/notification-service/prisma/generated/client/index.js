@@ -161,6 +161,14 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-3.0.x"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [
@@ -179,6 +187,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -187,8 +196,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"notif_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum NotificationChannel {\n  EMAIL\n  PUSH\n\n  @@schema(\"notif_db\")\n}\n\nmodel Notification {\n  id        String              @id @default(uuid())\n  userId    String?             @map(\"user_id\")\n  title     String\n  message   String\n  type      String              @default(\"SYSTEM_ALERT\")\n  channel   NotificationChannel @default(EMAIL)\n  isRead    Boolean             @default(false) @map(\"is_read\")\n  createdAt DateTime            @default(now()) @map(\"created_at\")\n  updatedAt DateTime            @updatedAt @map(\"updated_at\")\n\n  @@index([userId])\n  @@index([isRead])\n  @@index([createdAt])\n  @@map(\"notifications\")\n  @@schema(\"notif_db\")\n}\n\nmodel AuditLog {\n  id           String   @id @default(uuid())\n  userId       String?  @map(\"user_id\")\n  action       String\n  resource     String?\n  resourceId   String?  @map(\"resource_id\")\n  ipAddress    String?  @map(\"ip_address\")\n  details      String?\n  hash         String   @unique\n  previousHash String?  @map(\"previous_hash\")\n  createdAt    DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@index([action])\n  @@index([createdAt])\n  @@map(\"audit_logs\")\n  @@schema(\"notif_db\")\n}\n",
-  "inlineSchemaHash": "6f79ad7d4e1bfa2edbfd518abe6c45078641d048fcc887365f4936a32dd3270e",
+  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"notif_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  binaryTargets   = [\"native\", \"debian-openssl-3.0.x\", \"linux-musl-openssl-3.0.x\"]\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum NotificationChannel {\n  EMAIL\n  PUSH\n\n  @@schema(\"notif_db\")\n}\n\nmodel Notification {\n  id        String              @id @default(uuid())\n  userId    String?             @map(\"user_id\")\n  title     String\n  message   String\n  type      String              @default(\"SYSTEM_ALERT\")\n  channel   NotificationChannel @default(EMAIL)\n  isRead    Boolean             @default(false) @map(\"is_read\")\n  createdAt DateTime            @default(now()) @map(\"created_at\")\n  updatedAt DateTime            @updatedAt @map(\"updated_at\")\n\n  @@index([userId])\n  @@index([isRead])\n  @@index([createdAt])\n  @@map(\"notifications\")\n  @@schema(\"notif_db\")\n}\n\nmodel AuditLog {\n  id           String   @id @default(uuid())\n  userId       String?  @map(\"user_id\")\n  action       String\n  resource     String?\n  resourceId   String?  @map(\"resource_id\")\n  ipAddress    String?  @map(\"ip_address\")\n  details      String?\n  hash         String   @unique\n  previousHash String?  @map(\"previous_hash\")\n  createdAt    DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@index([action])\n  @@index([createdAt])\n  @@map(\"audit_logs\")\n  @@schema(\"notif_db\")\n}\n",
+  "inlineSchemaHash": "ce59b81243b65806641fb9e3fdac0cd9750a96086d08625f84aeab7d942386d0",
   "copyEngine": true
 }
 
@@ -197,8 +206,8 @@ const fs = require('fs')
 config.dirname = __dirname
 if (!fs.existsSync(path.join(__dirname, 'schema.prisma'))) {
   const alternativePaths = [
-    "prisma/generated/client",
-    "generated/client",
+    "services/notification-service/prisma/generated/client",
+    "notification-service/prisma/generated/client",
   ]
   
   const alternativePath = alternativePaths.find((altPath) => {
@@ -227,7 +236,15 @@ Object.assign(exports, Prisma)
 
 // file annotations for bundling tools to include these files
 path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "prisma/generated/client/query_engine-windows.dll.node")
+path.join(process.cwd(), "services/notification-service/prisma/generated/client/query_engine-windows.dll.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
+path.join(process.cwd(), "services/notification-service/prisma/generated/client/libquery_engine-debian-openssl-3.0.x.so.node")
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "libquery_engine-linux-musl-openssl-3.0.x.so.node");
+path.join(process.cwd(), "services/notification-service/prisma/generated/client/libquery_engine-linux-musl-openssl-3.0.x.so.node")
 // file annotations for bundling tools to include these files
 path.join(__dirname, "schema.prisma");
-path.join(process.cwd(), "prisma/generated/client/schema.prisma")
+path.join(process.cwd(), "services/notification-service/prisma/generated/client/schema.prisma")

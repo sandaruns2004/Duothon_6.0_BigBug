@@ -174,6 +174,14 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-3.0.x"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [
@@ -192,6 +200,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -200,8 +209,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"txn_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum TransactionType {\n  TRANSFER\n  PAYMENT\n  DEPOSIT\n\n  @@schema(\"txn_db\")\n}\n\nenum TransactionStatus {\n  PENDING\n  SUCCESS\n  FAILED\n  FLAGGED\n\n  @@schema(\"txn_db\")\n}\n\nenum FraudAlertStatus {\n  FLAGGED\n  REVIEWED\n  CLEARED\n\n  @@schema(\"txn_db\")\n}\n\nmodel Transaction {\n  id              String            @id @default(uuid())\n  userId          String?           @map(\"user_id\")\n  fromAccountId   String            @map(\"from_account_id\")\n  toAccountId     String            @map(\"to_account_id\")\n  amount          Decimal           @db.Decimal(15, 2)\n  currency        String            @default(\"LKR\")\n  type            TransactionType   @default(TRANSFER)\n  status          TransactionStatus @default(PENDING)\n  referenceNumber String            @unique @map(\"reference_number\")\n  fraudFlag       Boolean           @default(false) @map(\"fraud_flag\")\n  description     String?\n  createdAt       DateTime          @default(now()) @map(\"created_at\")\n  updatedAt       DateTime          @updatedAt @map(\"updated_at\")\n\n  fraudAlerts FraudAlert[]\n\n  @@index([fromAccountId])\n  @@index([toAccountId])\n  @@index([createdAt])\n  @@map(\"transactions\")\n  @@schema(\"txn_db\")\n}\n\nmodel FraudAlert {\n  id            String           @id @default(uuid())\n  transactionId String           @map(\"transaction_id\")\n  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)\n  ruleTriggered String           @map(\"rule_triggered\")\n  riskScore     Int              @default(0) @map(\"risk_score\")\n  status        FraudAlertStatus @default(FLAGGED)\n  createdAt     DateTime         @default(now()) @map(\"created_at\")\n\n  @@index([transactionId])\n  @@map(\"fraud_alerts\")\n  @@schema(\"txn_db\")\n}\n",
-  "inlineSchemaHash": "8686f396dcbb05ecefb49f69af112c8e7707a7d623bae5ac881ccd1549e8e252",
+  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"txn_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  binaryTargets   = [\"native\", \"debian-openssl-3.0.x\", \"linux-musl-openssl-3.0.x\"]\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum TransactionType {\n  TRANSFER\n  PAYMENT\n  DEPOSIT\n\n  @@schema(\"txn_db\")\n}\n\nenum TransactionStatus {\n  PENDING\n  SUCCESS\n  FAILED\n  FLAGGED\n\n  @@schema(\"txn_db\")\n}\n\nenum FraudAlertStatus {\n  FLAGGED\n  REVIEWED\n  CLEARED\n\n  @@schema(\"txn_db\")\n}\n\nmodel Transaction {\n  id              String            @id @default(uuid())\n  userId          String?           @map(\"user_id\")\n  fromAccountId   String            @map(\"from_account_id\")\n  toAccountId     String            @map(\"to_account_id\")\n  amount          Decimal           @db.Decimal(15, 2)\n  currency        String            @default(\"LKR\")\n  type            TransactionType   @default(TRANSFER)\n  status          TransactionStatus @default(PENDING)\n  referenceNumber String            @unique @map(\"reference_number\")\n  fraudFlag       Boolean           @default(false) @map(\"fraud_flag\")\n  description     String?\n  createdAt       DateTime          @default(now()) @map(\"created_at\")\n  updatedAt       DateTime          @updatedAt @map(\"updated_at\")\n\n  fraudAlerts FraudAlert[]\n\n  @@index([fromAccountId])\n  @@index([toAccountId])\n  @@index([createdAt])\n  @@map(\"transactions\")\n  @@schema(\"txn_db\")\n}\n\nmodel FraudAlert {\n  id            String           @id @default(uuid())\n  transactionId String           @map(\"transaction_id\")\n  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)\n  ruleTriggered String           @map(\"rule_triggered\")\n  riskScore     Int              @default(0) @map(\"risk_score\")\n  status        FraudAlertStatus @default(FLAGGED)\n  createdAt     DateTime         @default(now()) @map(\"created_at\")\n\n  @@index([transactionId])\n  @@map(\"fraud_alerts\")\n  @@schema(\"txn_db\")\n}\n",
+  "inlineSchemaHash": "23788de4bb3e1b6f871d3985039f9d909bd704040acb4a74e28180d60dd88816",
   "copyEngine": true
 }
 config.dirname = '/'

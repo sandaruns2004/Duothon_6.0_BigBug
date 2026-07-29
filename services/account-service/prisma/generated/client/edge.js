@@ -182,6 +182,14 @@ const config = {
         "fromEnvVar": null,
         "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "debian-openssl-3.0.x"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [
@@ -200,6 +208,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
@@ -208,8 +217,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"acct_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum AccountType {\n  SAVINGS\n  CURRENT\n  BUSINESS\n\n  @@schema(\"acct_db\")\n}\n\nenum AccountStatus {\n  ACTIVE\n  FROZEN\n  CLOSED\n\n  @@schema(\"acct_db\")\n}\n\nenum LoanStatus {\n  PENDING\n  APPROVED\n  ACTIVE\n  PAID\n\n  @@schema(\"acct_db\")\n}\n\nmodel Account {\n  id            String        @id @default(uuid())\n  userId        String        @map(\"user_id\")\n  accountNumber String        @unique @map(\"account_number\")\n  accountType   AccountType   @default(SAVINGS) @map(\"account_type\")\n  balance       Decimal       @default(0.00) @db.Decimal(15, 2)\n  currency      String        @default(\"LKR\")\n  status        AccountStatus @default(ACTIVE)\n  createdAt     DateTime      @default(now()) @map(\"created_at\")\n  updatedAt     DateTime      @updatedAt @map(\"updated_at\")\n\n  loans           Loan[]\n  utilityReceipts UtilityReceipt[]\n\n  @@index([userId])\n  @@map(\"accounts\")\n  @@schema(\"acct_db\")\n}\n\nmodel Loan {\n  id             String     @id @default(uuid())\n  userId         String     @map(\"user_id\")\n  accountId      String     @map(\"account_id\")\n  account        Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)\n  amount         Decimal    @db.Decimal(15, 2)\n  interestRate   Decimal    @map(\"interest_rate\") @db.Decimal(5, 2)\n  termMonths     Int        @map(\"term_months\")\n  monthlyPayment Decimal    @map(\"monthly_payment\") @db.Decimal(15, 2)\n  status         LoanStatus @default(PENDING)\n  createdAt      DateTime   @default(now()) @map(\"created_at\")\n  updatedAt      DateTime   @updatedAt @map(\"updated_at\")\n\n  @@index([userId])\n  @@index([accountId])\n  @@map(\"loans\")\n  @@schema(\"acct_db\")\n}\n\nmodel UtilityReceipt {\n  id               String   @id @default(uuid())\n  userId           String   @map(\"user_id\")\n  accountId        String   @map(\"account_id\")\n  account          Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)\n  biller           String\n  accountReference String   @map(\"account_reference\")\n  amount           Decimal  @db.Decimal(15, 2)\n  receiptNumber    String   @unique @map(\"receipt_number\")\n  status           String   @default(\"PAID\")\n  createdAt        DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@index([accountId])\n  @@map(\"utility_receipts\")\n  @@schema(\"acct_db\")\n}\n",
-  "inlineSchemaHash": "056968aaf4944ba0904e12900ecbea894d5097e324c729cdcded20cb56b68040",
+  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"acct_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  binaryTargets   = [\"native\", \"debian-openssl-3.0.x\", \"linux-musl-openssl-3.0.x\"]\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum AccountType {\n  SAVINGS\n  CURRENT\n  BUSINESS\n\n  @@schema(\"acct_db\")\n}\n\nenum AccountStatus {\n  ACTIVE\n  FROZEN\n  CLOSED\n\n  @@schema(\"acct_db\")\n}\n\nenum LoanStatus {\n  PENDING\n  APPROVED\n  ACTIVE\n  PAID\n\n  @@schema(\"acct_db\")\n}\n\nmodel Account {\n  id            String        @id @default(uuid())\n  userId        String        @map(\"user_id\")\n  accountNumber String        @unique @map(\"account_number\")\n  accountType   AccountType   @default(SAVINGS) @map(\"account_type\")\n  balance       Decimal       @default(0.00) @db.Decimal(15, 2)\n  currency      String        @default(\"LKR\")\n  status        AccountStatus @default(ACTIVE)\n  createdAt     DateTime      @default(now()) @map(\"created_at\")\n  updatedAt     DateTime      @updatedAt @map(\"updated_at\")\n\n  loans           Loan[]\n  utilityReceipts UtilityReceipt[]\n\n  @@index([userId])\n  @@map(\"accounts\")\n  @@schema(\"acct_db\")\n}\n\nmodel Loan {\n  id             String     @id @default(uuid())\n  userId         String     @map(\"user_id\")\n  accountId      String     @map(\"account_id\")\n  account        Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)\n  amount         Decimal    @db.Decimal(15, 2)\n  interestRate   Decimal    @map(\"interest_rate\") @db.Decimal(5, 2)\n  termMonths     Int        @map(\"term_months\")\n  monthlyPayment Decimal    @map(\"monthly_payment\") @db.Decimal(15, 2)\n  status         LoanStatus @default(PENDING)\n  createdAt      DateTime   @default(now()) @map(\"created_at\")\n  updatedAt      DateTime   @updatedAt @map(\"updated_at\")\n\n  @@index([userId])\n  @@index([accountId])\n  @@map(\"loans\")\n  @@schema(\"acct_db\")\n}\n\nmodel UtilityReceipt {\n  id               String   @id @default(uuid())\n  userId           String   @map(\"user_id\")\n  accountId        String   @map(\"account_id\")\n  account          Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)\n  biller           String\n  accountReference String   @map(\"account_reference\")\n  amount           Decimal  @db.Decimal(15, 2)\n  receiptNumber    String   @unique @map(\"receipt_number\")\n  status           String   @default(\"PAID\")\n  createdAt        DateTime @default(now()) @map(\"created_at\")\n\n  @@index([userId])\n  @@index([accountId])\n  @@map(\"utility_receipts\")\n  @@schema(\"acct_db\")\n}\n",
+  "inlineSchemaHash": "e84030b7dce7ef839867fb81f3b58b146e3364c5604604a76ac6658a619a8c03",
   "copyEngine": true
 }
 config.dirname = '/'
