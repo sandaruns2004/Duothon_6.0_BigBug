@@ -95,8 +95,6 @@ jobs:
           tags: |
             ${{ env.REGISTRY_LOGIN_SERVER }}/${{ matrix.service }}:${{ github.sha }}
             ${{ env.REGISTRY_LOGIN_SERVER }}/${{ matrix.service }}:latest
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   deploy:
     needs: [changes, build-and-push]

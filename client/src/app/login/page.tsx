@@ -8,6 +8,7 @@ import { authApi, setTokens } from '@/lib/api';
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
+  console.log('Mounting login page');
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
