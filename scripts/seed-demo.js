@@ -243,3 +243,5 @@ const runSeed = async () => {
 };
 
 runSeed();
+
+// Trigger seed job rebuild
