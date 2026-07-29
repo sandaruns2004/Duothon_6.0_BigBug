@@ -47,11 +47,8 @@ async function handleRequest(request: NextRequest) {
       redirect: 'manual',
     });
 
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers,
-    });
+    // Return the response directly to allow Next.js to handle headers and streaming correctly
+    return response;
   } catch (err: any) {
     console.error('API Proxy Error:', err.message);
     return new Response(
