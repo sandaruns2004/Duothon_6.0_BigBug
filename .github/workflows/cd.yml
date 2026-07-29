@@ -98,7 +98,7 @@ jobs:
 
           echo "⚙️ Setting Shared Environment Variables..."
           JWT_SECRET="aegisvault-super-secret-jwt-key-2026"
-          DB_BASE="postgresql://aegis_admin:securep@ss123@${PG_FQDN}:5432/aegisvault"
+          DB_BASE="postgresql://aegis_admin:securep%40ss123@${PG_FQDN}:5432/aegisvault"
           REDIS_URL="redis://${REDIS_FQDN}:6379"
 
           echo "🚀 Deploying Databases..."
@@ -143,6 +143,11 @@ jobs:
             --environment ${{ env.ENVIRONMENT_NAME }} \
             --trigger-type Manual \
             --replica-timeout 300 \
+            --replica-retry-limit 0 \
+            --env-vars "DATABASE_URL=${DB_BASE}" \
+            --registry-server ${{ env.REGISTRY_LOGIN_SERVER }} \
+            --registry-username ${{ secrets.REGISTRY_USERNAME }} \
+            --registry-password ${{ secrets.REGISTRY_PASSWORD }} \
             --image ${{ env.REGISTRY_LOGIN_SERVER }}/seed-job:${{ github.sha }}
           
           echo "▶️ Starting the Seed Job..."

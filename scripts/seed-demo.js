@@ -27,7 +27,8 @@ const syncDatabaseSchemas = () => {
 
   for (const svc of services) {
     const schemaPath = path.join(__dirname, '..', 'services', svc.name, 'prisma', 'schema.prisma');
-    const dbUrl = `postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault?schema=${svc.schema}`;
+    const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault';
+    const dbUrl = `${baseDbUrl.split('?')[0]}?schema=${svc.schema}`;
     try {
       console.log(`   -> Syncing schema for ${svc.name} (${svc.schema})...`);
       execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
