@@ -27,7 +27,7 @@ const syncDatabaseSchemas = () => {
 
   for (const svc of services) {
     const schemaPath = path.join(__dirname, '..', 'services', svc.name, 'prisma', 'schema.prisma');
-    const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault';
+    const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5433/aegisvault';
     const separator = baseDbUrl.includes('?') ? '&' : '?';
     const dbUrl = `${baseDbUrl}${separator}schema=${svc.schema}`;
     try {
@@ -46,7 +46,7 @@ const syncDatabaseSchemas = () => {
 const loadPrisma = (servicePath, schemaName) => {
   try {
     const { PrismaClient } = require(path.join(__dirname, '..', servicePath, 'prisma/generated/client'));
-    const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault';
+    const baseDbUrl = process.env.DATABASE_URL || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5433/aegisvault';
     const separator = baseDbUrl.includes('?') ? '&' : '?';
     const dbUrl = baseDbUrl.includes('schema=') ? baseDbUrl : `${baseDbUrl}${separator}schema=${schemaName}`;
     
@@ -167,9 +167,10 @@ const runSeed = async () => {
     console.log('💸 [3/4] Seeding Sample Transactions and Fraud Guard Flags...');
     const txn1 = await txnPrisma.transaction.upsert({
       where: { referenceNumber: 'TXN-DEMO-2026-001' },
-      update: {},
+      update: { userId: cust1.id },
       create: {
         id: 'txn-demo-001',
+        userId: cust1.id,
         fromAccountId: acct1.accountNumber,
         toAccountId: acct2.accountNumber,
         amount: 50000.00,
@@ -184,9 +185,10 @@ const runSeed = async () => {
 
     const txn2 = await txnPrisma.transaction.upsert({
       where: { referenceNumber: 'TXN-DEMO-2026-002-FRAUD' },
-      update: {},
+      update: { userId: cust1.id },
       create: {
         id: 'txn-demo-002-fraud',
+        userId: cust1.id,
         fromAccountId: acct1.accountNumber,
         toAccountId: '810099999999',
         amount: 650000.00,

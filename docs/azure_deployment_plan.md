@@ -39,4 +39,4 @@ The Azure deployment architecture has been fully implemented:
 
 1. **GitHub Actions Workflows:** The `ci.yml` and `cd.yml` workflows automate testing, building, and deploying the application, including a `seed-job` to initialize the database in production.
 2. **Infrastructure Scripts:** Azure CLI scripts (`provision.azcli`, `provision-dbs.azcli`) are available in the `infrastructure/` directory to instantly provision the entire Azure architecture (ACR, VNet, ACA, etc.) correctly.
-3. **Database Seeding:** A dedicated Azure Container App Job (`seed-job`) handles Prisma migrations and seeding default demo data during CD deployments.
+3. **Database Seeding & Dynamic Account Provisioning:** A dedicated Azure Container App Job (`seed-job`) handles Prisma migrations and seeds default sandbox accounts (`810000000001` for Customer 1 and `810000000002` for Customer 2), while the `account-service` includes a **Just-In-Time (JIT) Provisioner** to automatically create unique 12-digit SAVINGS accounts with `500,000.00 LKR` for all newly registered customers.

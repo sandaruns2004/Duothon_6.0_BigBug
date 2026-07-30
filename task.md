@@ -56,7 +56,7 @@
   - [x] `Account` model (`id`, `userId`, `accountNumber`, `accountType=SAVINGS|CURRENT|BUSINESS`, `balance`, `currency=LKR`, `status=ACTIVE|FROZEN|CLOSED`)
   - [x] `Loan` model (`id`, `userId`, `accountId`, `amount`, `interestRate`, `termMonths`, `monthlyPayment`, `status=PENDING|APPROVED|ACTIVE|PAID`)
 - [x] Implement `POST /api/accounts` (auto-generate unique 12-digit account number, default 0 balance)
-- [x] Implement `GET /api/accounts` (list all accounts for authenticated user)
+- [x] Implement `GET /api/accounts` (list all accounts for authenticated user, with JIT auto-provisioning of a default SAVINGS account with `500,000.00 LKR` balance for new users)
 - [x] Implement `GET /api/accounts/:id/balance` (real-time balance check for internal/external queries)
 - [x] Implement internal `POST /api/accounts/execute-transfer`:
   - [x] Execute atomic SQL transaction (`BEGIN` -> debit sender if balance sufficient -> credit receiver -> `COMMIT`)

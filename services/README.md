@@ -8,8 +8,8 @@ This directory houses the API Gateway and the 5 independent microservices of the
 | :--- | :---: | :--- | :--- |
 | **API Gateway** (`api-gateway`) | `3000` | N/A | Rate limiting (Redis), JWT middleware, Winston logging, reverse proxy |
 | **Auth Service** (`auth-service`) | `3001` | `auth_db` | User registration, login, JWT token issuance/refresh, OTP MFA, KYC |
-| **Account Service** (`account-service`) | `3002` | `acct_db` | Bank account CRUD, balance queries, ACID transfers, loans, bill payments |
-| **Transaction Service** (`transaction-service`) | `3003` | `txn_db` | Orchestrator for fund transfers, rule-based fraud detection engine |
+| **Account Service** (`account-service`) | `3002` | `acct_db` | Bank account CRUD, JIT auto-provisioning (`500k LKR`), balance queries, ACID transfers, loans, bill payments |
+| **Transaction Service** (`transaction-service`) | `3003` | `txn_db` | Orchestrator for fund transfers, dynamic sandbox account resolution, rule-based fraud detection engine |
 | **Notification Service** (`notification-service`) | `3004` | `notif_db` | Email sending (Nodemailer), alerts, immutable hash-chained audit trail |
 | **Admin Service** (`admin-service`) | `3005` | `admin_db` | System KPI metrics, user management, KYC verification, fraud monitoring |
 

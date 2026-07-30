@@ -13,7 +13,7 @@ import {
   X, 
   RefreshCw 
 } from 'lucide-react';
-import { txnApi } from '@/lib/api';
+import { txnApi, accountApi } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Transaction {
@@ -40,7 +40,24 @@ export default function TransactionsPage() {
   // Selected receipt modal
   const [selectedReceipt, setSelectedReceipt] = useState<Transaction | null>(null);
 
-  const myAccountNumber = '810023459812';
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [myAccountNumber, setMyAccountNumber] = useState('');
+
+  useEffect(() => {
+    accountApi.getAccounts()
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.accounts) && res.data.accounts.length > 0) {
+          setAccounts(res.data.accounts);
+          const saved = typeof window !== 'undefined' ? localStorage.getItem('aegisvault_selected_account_number') : null;
+          const matched = saved ? res.data.accounts.find((a: any) => a.accountNumber === saved) : null;
+          const chosen = matched || res.data.accounts[0];
+          setMyAccountNumber(chosen.accountNumber);
+        }
+      })
+      .catch(() => {
+        setMyAccountNumber('810000000001');
+      });
+  }, []);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -115,6 +132,10 @@ export default function TransactionsPage() {
       const isCredit = txn.toAccountId === myAccountNumber;
       const isDebit = txn.fromAccountId === myAccountNumber;
 
+      if (myAccountNumber && txn.fromAccountId !== myAccountNumber && txn.toAccountId !== myAccountNumber) {
+        return false;
+      }
+
       if (activeTab === 'CREDIT' && !isCredit) return false;
       if (activeTab === 'DEBIT' && !isDebit) return false;
       if (activeTab === 'FLAGGED' && !txn.fraudFlag) return false;
@@ -157,14 +178,37 @@ export default function TransactionsPage() {
           </p>
         </div>
 
-        <button
-          onClick={fetchTransactions}
-          disabled={loading}
-          className="btn-outline text-xs py-2 px-3 self-start sm:self-center gap-1.5"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
-          <span>Sync Ledger</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {accounts.length > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Account:</span>
+              <select
+                value={myAccountNumber}
+                onChange={(e) => {
+                  setMyAccountNumber(e.target.value);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('aegisvault_selected_account_number', e.target.value);
+                  }
+                }}
+                className="bg-surface-card border border-border rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary"
+              >
+                {accounts.map((a: any) => (
+                  <option key={a.id} value={a.accountNumber}>
+                    {a.accountType} •••• {a.accountNumber.slice(-4)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <button
+            onClick={fetchTransactions}
+            disabled={loading}
+            className="btn-outline text-xs py-2 px-3 self-start sm:self-center gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
+            <span>Sync Ledger</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs & Search Bar */}

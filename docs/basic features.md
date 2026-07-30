@@ -326,6 +326,28 @@ sequenceDiagram
     NOTIF->>DB: INSERT audit_log with hash chain (notif_db.audit_logs)
 ```
 
+### ⚡ Dynamic Account Resolution & JIT Account Provisioning
+AegisVault eliminates static demo fallbacks by implementing **Just-In-Time (JIT) Account Provisioning** and dynamic session binding across all banking features:
+
+```mermaid
+graph LR
+    A[GET /api/accounts] --> B{Accounts exist in acct_db?}
+    B -->|Yes| C[Return user's isolated accounts]
+    B -->|No - 0 accounts| D[JIT Auto-Provision SAVINGS Account]
+    D -->|Atomic SQL Create| E[Unique 12-Digit Account # + 500,000 LKR]
+    E --> C
+```
+
+1. **JIT Bank Account Provisioning (`account-service`)**:
+   - Whenever any user (newly registered or existing) calls `GET /api/accounts` and has `0` bank accounts, `listAccounts` automatically generates a mathematically unique 12-digit account number (`generateAccountNumber()`) and provisions a **SAVINGS** account with **500,000.00 LKR** starting balance.
+2. **Dynamic UI Binding across Customer Features**:
+   - `/dashboard`, `/transfer`, `/transactions`, `/payments`, and `/profile` dynamically bind to the logged-in user's active account number and verified profile (`/api/users/profile`).
+3. **Sandbox Quick Evaluation Logins (`/login`)**:
+   - **Customer 1 Demo (`customer1@aegisvault.com`)**: Savings Account `810000000001` (1,500,000.00 LKR) — default sender account.
+   - **Customer 2 Demo (`customer2@aegisvault.com`)**: Current Account `810000000002` (750,000.00 LKR) — isolated recipient account.
+   - **Admin Demo (`admin@aegisvault.com`)**: System Governance & Security Alerting dashboard.
+   - Logging out (`clearTokens()`) purges `aegisvault_selected_account_number`, `tempUserId`, and `tempEmail` from `localStorage`, guaranteeing 100% clean session switching.
+
 ---
 
 ## 🔗 5. How Microservices Talk to Each Other

@@ -23,3 +23,5 @@ The API Gateway is the central entry point for all incoming HTTP traffic in the 
    - Configured with `fixRequestBody` so parsed JSON payloads stream correctly to backend microservices.
 6. **Health Check (`GET /health`)**:
    - Returns `{ status: 'healthy', service: 'api-gateway', timestamp, uptimeSeconds }`.
+7. **Profile & Dynamic Account Proxying**:
+   - Proxies `/api/users/profile` (`auth-service`) and `/api/accounts` (`account-service`), ensuring customer identity headers (`x-user-id`, `x-user-email`) are injected for JIT account auto-provisioning and dynamic sandbox transfer resolution.

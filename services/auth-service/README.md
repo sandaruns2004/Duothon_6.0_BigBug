@@ -21,6 +21,9 @@ The Auth Service runs on **Port 3001** and is responsible for customer identity 
 5. **Customer KYC Submission**:
    - Accepts NIC number and document references.
    - Automatically updates KYC verification status to enable instant testing of banking accounts and transactions.
+6. **Multi-Sandbox Account & JIT Profile Interoperability**:
+   - `/api/users/profile` provides full identity profile data (`email`, `phone`, `nic`, `role`, `kycStatus`), allowing customer pages (`/profile`, `/dashboard`, `/transfer`) to bind dynamically without static "John Doe" placeholders.
+   - Fully supports seamless switching between **Customer 1 (`customer1@aegisvault.com`)**, **Customer 2 (`customer2@aegisvault.com`)**, and newly registered JIT auto-provisioned accounts.
 
 ## Endpoints Summary
 

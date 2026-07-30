@@ -57,14 +57,17 @@ export default function DashboardPage() {
 
       if (accRes?.data?.success && Array.isArray(accRes.data.accounts) && accRes.data.accounts.length > 0) {
         setAccounts(accRes.data.accounts);
-        setSelectedAcc(accRes.data.accounts[0]);
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('aegisvault_selected_account_number') : null;
+        const matched = saved ? accRes.data.accounts.find((a: Account) => a.accountNumber === saved) : null;
+        const chosen = matched || accRes.data.accounts[0];
+        setSelectedAcc(chosen);
       } else {
         // Fallback demo account for smooth initial evaluation
         const demoAcc: Account = {
           id: 'acc-demo-001',
-          accountNumber: '810023459812',
+          accountNumber: '810000000001',
           accountType: 'SAVINGS',
-          balance: '485250.00',
+          balance: '1500000.00',
           currency: 'LKR',
           status: 'ACTIVE'
         };
@@ -83,7 +86,7 @@ export default function DashboardPage() {
             amount: '25000.00',
             type: 'TRANSFER',
             status: 'SUCCESS',
-            fromAccountId: '810023459812',
+            fromAccountId: '810000000001',
             toAccountId: '810087654321',
             createdAt: new Date(Date.now() - 3600000).toISOString(),
             description: 'Rent transfer'
@@ -94,7 +97,7 @@ export default function DashboardPage() {
             amount: '600000.00',
             type: 'TRANSFER',
             status: 'SUCCESS',
-            fromAccountId: '810023459812',
+            fromAccountId: '810000000001',
             toAccountId: '990011223344',
             fraudFlag: true,
             createdAt: new Date(Date.now() - 7200000).toISOString(),
@@ -131,7 +134,12 @@ export default function DashboardPage() {
               value={selectedAcc?.id || ''}
               onChange={(e) => {
                 const acc = accounts.find((a) => a.id === e.target.value);
-                if (acc) setSelectedAcc(acc);
+                if (acc) {
+                  setSelectedAcc(acc);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('aegisvault_selected_account_number', acc.accountNumber);
+                  }
+                }
               }}
               className="bg-surface-card border border-border rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary"
             >
@@ -159,7 +167,7 @@ export default function DashboardPage() {
                 {selectedAcc?.status || 'ACTIVE'}
               </span>
               <span className="text-xs font-mono text-gray-400">
-                {selectedAcc?.accountType || 'SAVINGS'} ACC • {selectedAcc?.accountNumber || '810023459812'}
+                {selectedAcc?.accountType || 'SAVINGS'} ACC • {selectedAcc?.accountNumber || 'N/A'}
               </span>
             </div>
 
@@ -276,7 +284,9 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40 text-sm">
-                {transactions.map((txn) => {
+                {transactions
+                  .filter((txn) => !selectedAcc || txn.fromAccountId === selectedAcc.accountNumber || txn.toAccountId === selectedAcc.accountNumber)
+                  .map((txn) => {
                   const isCredit = txn.toAccountId === selectedAcc?.accountNumber;
                   return (
                     <tr key={txn.id} className="hover:bg-surface-card/60 transition-colors">

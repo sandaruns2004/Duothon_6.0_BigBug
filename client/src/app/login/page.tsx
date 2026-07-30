@@ -63,6 +63,11 @@ export default function LoginPage() {
     setPassword('CustomerSecure2026!');
   };
 
+  const fillDemoCustomer2 = () => {
+    setEmail('customer2@aegisvault.com');
+    setPassword('CustomerSecure2026!');
+  };
+
   const fillDemoAdmin = () => {
     setEmail('admin@aegisvault.com');
     setPassword('AdminSecure2026!');
@@ -156,22 +161,30 @@ export default function LoginPage() {
                 <Sparkles className="w-3.5 h-3.5" /> Quick Evaluation Credentials
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={fillDemoCustomer}
-                className="py-2 px-3 rounded-lg bg-surface border border-border/80 hover:border-primary/50 text-xs text-gray-300 font-medium transition-colors text-left"
+                className="py-2 px-2 rounded-lg bg-surface border border-border/80 hover:border-primary/50 text-xs text-gray-300 font-medium transition-colors text-left"
               >
-                <span className="block font-semibold text-white">Customer Demo</span>
-                <span className="text-[10px] text-gray-400">customer1@aegisvault.com</span>
+                <span className="block font-semibold text-white">Customer 1</span>
+                <span className="text-[10px] text-gray-400 truncate block">customer1@aegisvault.com</span>
+              </button>
+              <button
+                type="button"
+                onClick={fillDemoCustomer2}
+                className="py-2 px-2 rounded-lg bg-surface border border-border/80 hover:border-cyan-400/50 text-xs text-gray-300 font-medium transition-colors text-left"
+              >
+                <span className="block font-semibold text-cyan-400">Customer 2</span>
+                <span className="text-[10px] text-gray-400 truncate block">customer2@aegisvault.com</span>
               </button>
               <button
                 type="button"
                 onClick={fillDemoAdmin}
-                className="py-2 px-3 rounded-lg bg-surface border border-border/80 hover:border-emerald-500/50 text-xs text-gray-300 font-medium transition-colors text-left"
+                className="py-2 px-2 rounded-lg bg-surface border border-border/80 hover:border-emerald-500/50 text-xs text-gray-300 font-medium transition-colors text-left"
               >
-                <span className="block font-semibold text-emerald-400">Admin Demo</span>
-                <span className="text-[10px] text-gray-400">admin@aegisvault.com</span>
+                <span className="block font-semibold text-emerald-400">Admin</span>
+                <span className="text-[10px] text-gray-400 truncate block">admin@aegisvault.com</span>
               </button>
             </div>
           </div>

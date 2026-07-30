@@ -13,7 +13,7 @@ import {
   Phone, 
   CreditCard 
 } from 'lucide-react';
-import { notifApi } from '@/lib/api';
+import { notifApi, authApi } from '@/lib/api';
 import { motion } from 'framer-motion';
 
 interface Notification {
@@ -31,6 +31,26 @@ export default function ProfileAndNotificationsPage() {
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(true);
+  const [profile, setProfile] = useState<{
+    email: string;
+    phone: string;
+    nic: string;
+    role: string;
+    kycStatus: 'PENDING' | 'VERIFYING' | 'VERIFIED';
+  } | null>(null);
+
+  useEffect(() => {
+    authApi.getMe()
+      .then((res) => {
+        if (res.data?.success && res.data.profile) {
+          setProfile(res.data.profile);
+          if (res.data.profile.kycStatus) {
+            setKycStatus(res.data.profile.kycStatus);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchNotifications = async () => {
     setLoadingNotifs(true);
@@ -132,10 +152,10 @@ export default function ProfileAndNotificationsPage() {
           <div className="glass-card p-6 rounded-2xl border-border/80 shadow-glass space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-primary font-bold text-lg">
-                JD
+                {profile?.email ? profile.email.substring(0, 2).toUpperCase() : 'AV'}
               </div>
               <div>
-                <h3 className="font-bold text-white">John Doe</h3>
+                <h3 className="font-bold text-white">{profile?.email ? profile.email.split('@')[0].toUpperCase() : 'Authenticated User'}</h3>
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     kycStatus === 'VERIFIED'
@@ -154,15 +174,15 @@ export default function ProfileAndNotificationsPage() {
             <div className="space-y-2 pt-3 border-t border-border/60 text-xs text-gray-400">
               <div className="flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-gray-500" />
-                <span>john.doe@aegisvault.com</span>
+                <span>{profile?.email || 'customer@aegisvault.com'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-gray-500" />
-                <span>+94 77 123 4567</span>
+                <span>{profile?.phone || '+94 77 000 0000'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CreditCard className="w-3.5 h-3.5 text-gray-500" />
-                <span className="font-mono">981234567V</span>
+                <span className="font-mono">{profile?.nic || 'N/A'}</span>
               </div>
             </div>
           </div>

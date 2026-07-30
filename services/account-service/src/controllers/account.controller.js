@@ -73,10 +73,26 @@ const listAccounts = async (req, res) => {
       });
     }
 
-    const accounts = await prisma.account.findMany({
+    let accounts = await prisma.account.findMany({
       where: { userId: String(userId) },
       orderBy: { createdAt: 'asc' }
     });
+
+    if (accounts.length === 0) {
+      const accountNumber = await generateAccountNumber();
+      const newAccount = await prisma.account.create({
+        data: {
+          userId: String(userId),
+          accountNumber,
+          accountType: 'SAVINGS',
+          balance: 500000.00,
+          currency: 'LKR',
+          status: 'ACTIVE'
+        }
+      });
+      accounts = [newAccount];
+      logger.info('🏦 Auto-provisioned initial savings account for user:', { userId, accountNumber });
+    }
 
     return res.status(200).json({
       success: true,

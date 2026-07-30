@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Landmark, 
@@ -18,6 +18,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PaymentsAndLoansPage() {
   const [activeTab, setActiveTab] = useState<'bills' | 'loans'>('bills');
+  const [userAccountNumber, setUserAccountNumber] = useState('');
+
+  useEffect(() => {
+    accountApi.getAccounts()
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.accounts) && res.data.accounts.length > 0) {
+          const saved = typeof window !== 'undefined' ? localStorage.getItem('aegisvault_selected_account_number') : null;
+          const matched = saved ? res.data.accounts.find((a: { accountNumber: string }) => a.accountNumber === saved) : null;
+          const chosen = matched || res.data.accounts[0];
+          setUserAccountNumber(chosen.accountNumber);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Utility Bill Form State
   const [biller, setBiller] = useState('CEB');
@@ -61,7 +75,7 @@ export default function PaymentsAndLoansPage() {
     setBillLoading(true);
     try {
       const res = await accountApi.payBill({
-        accountNumber: '810023459812',
+        accountNumber: userAccountNumber || '810000000001',
         billerId: biller,
         amount: amountNum,
         referenceNumber: `BILL-${Date.now().toString().slice(-6)}`
@@ -87,7 +101,7 @@ export default function PaymentsAndLoansPage() {
 
     try {
       const res = await accountApi.applyLoan({
-        accountNumber: '810023459812',
+        accountNumber: userAccountNumber || '810000000001',
         amount: loanAmount,
         interestRate,
         tenorMonths,

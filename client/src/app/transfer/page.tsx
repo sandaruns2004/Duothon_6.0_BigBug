@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Send, 
@@ -17,14 +17,49 @@ import {
 import { accountApi } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface Account {
+  id: string;
+  accountNumber: string;
+  accountType: string;
+  balance: number | string;
+  currency: string;
+  status: string;
+}
+
 export default function TransferPage() {
   const router = useRouter();
-  const [fromAccount, setFromAccount] = useState('810023459812');
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [fromAccount, setFromAccount] = useState('');
   const [toAccount, setToAccount] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    accountApi.getAccounts()
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.accounts) && res.data.accounts.length > 0) {
+          setAccounts(res.data.accounts);
+          const saved = typeof window !== 'undefined' ? localStorage.getItem('aegisvault_selected_account_number') : null;
+          const matched = saved ? res.data.accounts.find((a: Account) => a.accountNumber === saved) : null;
+          const chosen = matched || res.data.accounts[0];
+          setFromAccount(chosen.accountNumber);
+        }
+      })
+      .catch(() => {
+        const demoAcc: Account = {
+          id: 'acc-demo-1',
+          accountNumber: '810000000001',
+          accountType: 'SAVINGS',
+          balance: 1500000,
+          currency: 'LKR',
+          status: 'ACTIVE'
+        };
+        setAccounts([demoAcc]);
+        setFromAccount(demoAcc.accountNumber);
+      });
+  }, []);
 
   // Confirmation Modal & Success Receipt State
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -55,8 +90,14 @@ export default function TransferPage() {
       return;
     }
 
-    if (fromAccount === toAccount) {
-      setError('Cannot transfer funds to the same account.');
+    if (fromAccount.trim() === toAccount.trim()) {
+      setError('Cannot transfer funds to the same source account number.');
+      return;
+    }
+
+    const currentAcc = accounts.find(a => a.accountNumber === fromAccount);
+    if (currentAcc && Number(currentAcc.balance) < totalDebit) {
+      setError(`Insufficient funds in selected account (Available: ${Number(currentAcc.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LKR, required: ${totalDebit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LKR).`);
       return;
     }
 
@@ -77,6 +118,12 @@ export default function TransferPage() {
       });
 
       if (res.data?.success) {
+        // Update local balance immediately
+        setAccounts(prev => prev.map(a => 
+          a.accountNumber === fromAccount 
+            ? { ...a, balance: Number(a.balance) - totalDebit }
+            : a
+        ));
         setShowConfirmModal(false);
         setSuccessReceipt({
           referenceNumber: res.data.transaction?.referenceNumber || `TXN-${Date.now().toString().slice(-6)}`,
@@ -124,17 +171,54 @@ export default function TransferPage() {
         <form onSubmit={handleValidateForm} className="space-y-5">
           {/* Sender Account */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">
-              From Account Number
-            </label>
-            <input
-              type="text"
-              required
-              value={fromAccount}
-              onChange={(e) => setFromAccount(e.target.value)}
-              placeholder="810023459812"
-              className="input-field font-mono text-sm"
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                From Account (Source Ledger)
+              </label>
+              {accounts.length > 0 && (
+                <span className="text-xs text-emerald-400 font-mono font-medium">
+                  Available: {Number(accounts.find(a => a.accountNumber === fromAccount)?.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LKR
+                </span>
+              )}
+            </div>
+            {accounts.length > 1 ? (
+              <select
+                value={fromAccount}
+                onChange={(e) => {
+                  setFromAccount(e.target.value);
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('aegisvault_selected_account_number', e.target.value);
+                  }
+                }}
+                className="input-field font-mono text-sm bg-surface-card text-white border-border focus:border-primary"
+              >
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.accountNumber}>
+                    {acc.accountType} — #{acc.accountNumber} ({Number(acc.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {acc.currency})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  disabled
+                  value={fromAccount}
+                  readOnly
+                  className="input-field font-mono text-sm bg-gray-900/80 text-gray-400 border-gray-800 cursor-not-allowed select-none"
+                  title="Source account number is automatically locked to your active ledger account"
+                />
+                <span className="absolute right-3.5 top-2.5 text-xs text-primary font-semibold uppercase tracking-wider">
+                  {accounts[0]?.accountType || 'SAVINGS'}
+                </span>
+              </div>
+            )}
+            <p className="text-[11px] text-gray-500 mt-1">
+              {accounts.length > 1 
+                ? 'Select any of your active AegisVault accounts as the debit source' 
+                : 'Locked to your authenticated primary account'}
+            </p>
           </div>
 
           {/* Recipient Account */}
