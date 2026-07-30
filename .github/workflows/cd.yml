@@ -149,6 +149,7 @@ jobs:
           if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
 
           REDIS_URL="redis://redis:6379"
+          RABBITMQ_URL="amqp://rabbitmq:5672"
 
           echo "🔐 Setting registry credentials sequentially to avoid conflicts..."
           APPS=("postgres" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
@@ -165,7 +166,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"auth-service"* ]]; then
-            az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=auth_db" REDIS_URL="$REDIS_URL" JWT_SECRET="$JWT_SECRET" JWT_ACCESS_EXPIRES_IN="15m" JWT_REFRESH_EXPIRES_IN="7d" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
+            az containerapp update --name auth-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/auth-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=auth_db" REDIS_URL="$REDIS_URL" RABBITMQ_URL="$RABBITMQ_URL" JWT_SECRET="$JWT_SECRET" JWT_ACCESS_EXPIRES_IN="15m" JWT_REFRESH_EXPIRES_IN="7d" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
           fi
           
           if [[ "$MODIFIED" == *"account-service"* ]]; then
@@ -173,11 +174,11 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"transaction-service"* ]]; then
-            az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=txn_db" ACCOUNT_SERVICE_URL="$ACCT_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
+            az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=txn_db" ACCOUNT_SERVICE_URL="$ACCT_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" RABBITMQ_URL="$RABBITMQ_URL" &
           fi
           
           if [[ "$MODIFIED" == *"notification-service"* ]]; then
-            az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=notif_db" SMTP_HOST="smtp.mailtrap.io" SMTP_PORT="2525" SMTP_USER="$SMTP_USERNAME" SMTP_PASS="$SMTP_PASSWORD" SMTP_FROM="noreply@aegisvault.com" &
+            az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=notif_db" SMTP_HOST="smtp.mailtrap.io" SMTP_PORT="2525" SMTP_USER="$SMTP_USERNAME" SMTP_PASS="$SMTP_PASSWORD" SMTP_FROM="noreply@aegisvault.com" RABBITMQ_URL="$RABBITMQ_URL" &
           fi
           
           if [[ "$MODIFIED" == *"admin-service"* ]]; then
