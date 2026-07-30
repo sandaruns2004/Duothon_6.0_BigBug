@@ -72,6 +72,7 @@ jobs:
             echo "context=." >> $GITHUB_OUTPUT
             echo 'FROM node:20-alpine' > Dockerfile.seed
             echo 'WORKDIR /app' >> Dockerfile.seed
+            echo 'RUN apk add --no-cache openssl' >> Dockerfile.seed
             echo 'COPY package*.json ./ ' >> Dockerfile.seed
             echo 'RUN npm install --no-audit --no-fund --loglevel=error && npm install --no-audit --no-fund --loglevel=error prisma@5.11.0 @prisma/client@5.11.0 bcrypt@5.1.1' >> Dockerfile.seed
             echo 'COPY . .' >> Dockerfile.seed
@@ -112,14 +113,14 @@ jobs:
       - name: Fetch Internal Service URLs
         run: |
           echo "🌐 Fetching Internal Service URLs..."
-          PG_FQDN=$(az containerapp show -n postgres -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
-          REDIS_FQDN=$(az containerapp show -n redis -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)
-          AUTH_URL="https://$(az containerapp show -n auth-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
-          ACCT_URL="https://$(az containerapp show -n account-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
-          TX_URL="https://$(az containerapp show -n transaction-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
-          NOTIF_URL="https://$(az containerapp show -n notification-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
-          ADMIN_URL="https://$(az containerapp show -n admin-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
-          API_GW_URL="https://$(az containerapp show -n api-gateway -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv)"
+          PG_FQDN=$(az containerapp show -n postgres -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')
+          REDIS_FQDN=$(az containerapp show -n redis -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')
+          AUTH_URL="https://$(az containerapp show -n auth-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          ACCT_URL="https://$(az containerapp show -n account-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          TX_URL="https://$(az containerapp show -n transaction-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          NOTIF_URL="https://$(az containerapp show -n notification-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          ADMIN_URL="https://$(az containerapp show -n admin-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          API_GW_URL="https://$(az containerapp show -n api-gateway -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           
           echo "PG_FQDN=$PG_FQDN" >> $GITHUB_ENV
           echo "REDIS_FQDN=$REDIS_FQDN" >> $GITHUB_ENV
@@ -172,7 +173,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"transaction-service"* ]]; then
-            az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=tx_db" ACCOUNT_SERVICE_URL="$ACCT_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
+            az containerapp update --name transaction-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/transaction-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=txn_db" ACCOUNT_SERVICE_URL="$ACCT_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" &
           fi
           
           if [[ "$MODIFIED" == *"notification-service"* ]]; then

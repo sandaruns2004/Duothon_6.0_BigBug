@@ -5,10 +5,15 @@ const { logger } = require('./logger');
 // Prisma Database Client for Admin Service (admin_db + cross-schema)
 // ═══════════════════════════════════════════════════════════════════
 
+const getDbUrl = () => {
+  const url = process.env.DATABASE_URL || process.env.DATABASE_URL_ADMIN || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault?schema=admin_db';
+  return url.trim();
+};
+
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || process.env.DATABASE_URL_ADMIN || 'postgresql://aegis_admin:securep%40ss123@127.0.0.1:5432/aegisvault?schema=admin_db'
+      url: getDbUrl()
     }
   },
   log: [
@@ -17,6 +22,7 @@ const prisma = new PrismaClient({
     { emit: 'event', level: 'warn' }
   ]
 });
+
 
 prisma.$on('error', (e) => {
   logger.error('Prisma Database Error in Admin Service', { error: e.message, target: e.target });

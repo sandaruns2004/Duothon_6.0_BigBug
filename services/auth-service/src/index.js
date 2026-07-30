@@ -16,10 +16,18 @@ const initDatabaseAndSeed = async () => {
     const schemaPath = path.join(__dirname, '../prisma/schema.prisma');
     if (process.env.DATABASE_URL) {
       logger.info('🔄 [Auth Service] Syncing schema with database...');
-      execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
-        env: { ...process.env },
-        stdio: 'inherit'
-      });
+      try {
+        execSync(`npx prisma db push --schema="${schemaPath}" --accept-data-loss`, {
+          env: { ...process.env },
+          stdio: 'inherit'
+        });
+      } catch (pushErr) {
+        logger.warn('npx prisma db push failed, trying local binary...', { error: pushErr.message });
+        execSync(`./node_modules/.bin/prisma db push --schema="${schemaPath}" --accept-data-loss`, {
+          env: { ...process.env },
+          stdio: 'inherit'
+        });
+      }
       logger.info('✅ [Auth Service] Schema synchronized successfully.');
 
       const demoEmail = 'customer1@aegisvault.com';
@@ -65,9 +73,14 @@ const initDatabaseAndSeed = async () => {
       }
     }
   } catch (err) {
-    logger.warn('⚠️ [Auth Service] Database initialization warning:', { error: err.message });
+    logger.error('❌ [Auth Service] Database initialization FAILED:', {
+      error: err.message,
+      stdout: err.stdout ? err.stdout.toString() : undefined,
+      stderr: err.stderr ? err.stderr.toString() : undefined
+    });
   }
 };
+
 
 
 // ═══════════════════════════════════════════════════════════════════
