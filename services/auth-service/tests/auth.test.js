@@ -42,10 +42,11 @@ jest.mock('../src/config/redis', () => ({
   },
 }));
 
-// Mock axios calls (e.g. to notification service)
-jest.mock('axios');
-const axios = require('axios');
-axios.post.mockResolvedValue({ data: { success: true } });
+// Mock RabbitMQ publisher
+jest.mock('../src/utils/rabbitmq', () => ({
+  publishCommand: jest.fn().mockResolvedValue(true),
+  publishEvent: jest.fn().mockResolvedValue(true),
+}));
 
 const { prisma } = require('../src/config/db');
 const app = require('../src/index');

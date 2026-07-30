@@ -1,0 +1,94 @@
+const amqp = require('amqp-connection-manager');
+const { logger } = require('../config/logger');
+
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+
+// Exchanges
+const COMMAND_EXCHANGE = 'aegisvault.commands';
+const EVENT_EXCHANGE = 'aegisvault.events';
+
+class RabbitMQService {
+  constructor() {
+    this.connection = null;
+    this.channelWrapper = null;
+  }
+
+  async connect() {
+    if (this.connection) return;
+
+    logger.info('🐇 Connecting to RabbitMQ...');
+
+    this.connection = amqp.connect([RABBITMQ_URL]);
+
+    this.connection.on('connect', () => {
+      logger.info('✅ RabbitMQ Connected!');
+    });
+
+    this.connection.on('disconnect', (err) => {
+      logger.error('❌ RabbitMQ Disconnected.', { error: err.err ? err.err.message : 'Unknown' });
+    });
+
+    this.channelWrapper = this.connection.createChannel({
+      json: true,
+      setup: async (channel) => {
+        // Assert exchanges
+        await channel.assertExchange(COMMAND_EXCHANGE, 'direct', { durable: true });
+        await channel.assertExchange(EVENT_EXCHANGE, 'topic', { durable: true });
+      }
+    });
+  }
+
+  async publishCommand(routingKey, message) {
+    if (!this.channelWrapper) await this.connect();
+    
+    try {
+      await this.channelWrapper.publish(COMMAND_EXCHANGE, routingKey, message, {
+        persistent: true
+      });
+      logger.debug('📤 Published Command to RabbitMQ', { routingKey });
+    } catch (err) {
+      logger.error('Failed to publish command', { error: err.message, routingKey });
+    }
+  }
+
+  async publishEvent(routingKey, message) {
+    if (!this.channelWrapper) await this.connect();
+
+    try {
+      await this.channelWrapper.publish(EVENT_EXCHANGE, routingKey, message, {
+        persistent: true
+      });
+      logger.debug('📤 Published Event to RabbitMQ', { routingKey });
+    } catch (err) {
+      logger.error('Failed to publish event', { error: err.message, routingKey });
+    }
+  }
+
+  /**
+   * For consumers (notification-service)
+   */
+  async consume(queueName, exchange, routingKey, callback) {
+    if (!this.channelWrapper) await this.connect();
+
+    this.channelWrapper.addSetup(async (channel) => {
+      await channel.assertQueue(queueName, { durable: true });
+      await channel.bindQueue(queueName, exchange, routingKey);
+      await channel.consume(queueName, async (msg) => {
+        if (msg !== null) {
+          try {
+            const content = JSON.parse(msg.content.toString());
+            await callback(content);
+            channel.ack(msg);
+          } catch (err) {
+            logger.error('Error processing message', { error: err.message, queueName });
+            // Nack without requeue to avoid infinite loop
+            channel.nack(msg, false, false);
+          }
+        }
+      });
+    });
+  }
+}
+
+const rabbitmq = new RabbitMQService();
+module.exports = rabbitmq;

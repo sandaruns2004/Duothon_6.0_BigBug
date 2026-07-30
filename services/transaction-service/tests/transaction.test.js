@@ -25,6 +25,12 @@ jest.mock('../src/config/db', () => {
 jest.mock('axios');
 const axios = require('axios');
 
+// Mock RabbitMQ publisher
+jest.mock('../src/utils/rabbitmq', () => ({
+  publishCommand: jest.fn().mockResolvedValue(true),
+  publishEvent: jest.fn().mockResolvedValue(true),
+}));
+
 const { prisma } = require('../src/config/db');
 const app = require('../src/index');
 

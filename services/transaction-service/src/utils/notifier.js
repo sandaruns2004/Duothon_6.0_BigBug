@@ -1,22 +1,19 @@
-const axios = require('axios');
+const rabbitmq = require('./rabbitmq');
 const { logger } = require('../config/logger');
 
 // ═══════════════════════════════════════════════════════════════════
 // Async Fire-and-Forget Notification & Audit Dispatcher
 // ═══════════════════════════════════════════════════════════════════
 
-const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004';
-
 /**
- * Asynchronously dispatches fire-and-forget notifications and audit events to Notification Service
+ * Asynchronously dispatches fire-and-forget notifications and audit events via RabbitMQ
  */
 const dispatchAsyncNotifications = async ({ transaction, fraudEvaluation, userEmail }) => {
   // Fire-and-forget execution without blocking the API response
   setImmediate(async () => {
     try {
-      // 1. Dispatch notification event
-      const notifyUrl = `${NOTIFICATION_SERVICE_URL}/internal/notify`;
-      axios.post(notifyUrl, {
+      // 1. Dispatch notification command (direct exchange)
+      await rabbitmq.publishCommand('notify.send', {
         to: userEmail || 'customer@aegisvault.com',
         type: 'TRANSACTION_ALERT',
         subject: `Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
@@ -27,13 +24,10 @@ const dispatchAsyncNotifications = async ({ transaction, fraudEvaluation, userEm
         status: transaction.status,
         fraudFlag: transaction.fraudFlag,
         timestamp: transaction.createdAt
-      }, { timeout: 2000 }).catch((e) => {
-        logger.debug('Notification service /internal/notify unreachable:', { error: e.message });
       });
 
-      // 2. Dispatch audit log event
-      const auditUrl = `${NOTIFICATION_SERVICE_URL}/internal/audit`;
-      axios.post(auditUrl, {
+      // 2. Dispatch audit log event (topic exchange)
+      await rabbitmq.publishEvent('audit.log', {
         eventType: 'TRANSACTION_AUDIT',
         service: 'transaction-service',
         transactionId: transaction.id,
@@ -46,8 +40,6 @@ const dispatchAsyncNotifications = async ({ transaction, fraudEvaluation, userEm
         riskScore: fraudEvaluation.totalRiskScore,
         triggeredRules: fraudEvaluation.triggeredRules,
         timestamp: new Date().toISOString()
-      }, { timeout: 2000 }).catch((e) => {
-        logger.debug('Notification service /internal/audit unreachable:', { error: e.message });
       });
 
       if (transaction.fraudFlag) {

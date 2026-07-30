@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@prisma/client": "^5.11.0",
+    "amqp-connection-manager": "^5.0.0",
+    "amqplib": "^2.0.1",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
     "express": "^4.19.2",

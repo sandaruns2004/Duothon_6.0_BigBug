@@ -1,12 +1,10 @@
 const crypto = require('crypto');
-const axios = require('axios');
+const rabbitmq = require('./rabbitmq');
 const { logger } = require('../config/logger');
 
 // ═══════════════════════════════════════════════════════════════════
 // MFA OTP Generation, Hashing, Verification & Email Delivery
 // ═══════════════════════════════════════════════════════════════════
-
-const NOTIFICATION_SERVICE_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004';
 
 /**
  * Generates a random numeric OTP of specified length (default 6 digits)
@@ -37,7 +35,7 @@ const verifyOtpHash = (otp, hash) => {
 };
 
 /**
- * Sends MFA Login OTP email via Notification Service with resilient fallback
+ * Sends MFA Login OTP email via RabbitMQ
  */
 const sendOtpEmail = async (email, otp) => {
   // Always log OTP in non-production environments for automated testing & demos
@@ -50,8 +48,7 @@ const sendOtpEmail = async (email, otp) => {
   }
 
   try {
-    const url = `${NOTIFICATION_SERVICE_URL}/internal/email`;
-    await axios.post(url, {
+    await rabbitmq.publishCommand('email.send', {
       to: email,
       subject: 'AegisVault Security: Your Multi-Factor Login OTP',
       text: `Your AegisVault secure login OTP is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
@@ -65,14 +62,12 @@ const sendOtpEmail = async (email, otp) => {
           <p style="color: #94a3b8; font-size: 14px;">This code is valid for <strong>5 minutes</strong>. If you did not initiate this login, please contact AegisVault Security immediately.</p>
         </div>
       `
-    }, {
-      timeout: 3000
     });
 
-    logger.info('📧 MFA OTP email dispatched successfully via Notification Service', { email });
+    logger.info('📧 MFA OTP email dispatched successfully via RabbitMQ', { email });
     return true;
   } catch (err) {
-    logger.warn('Could not reach Notification Service to send OTP email (running in degraded notification mode):', {
+    logger.warn('Could not dispatch OTP email via RabbitMQ:', {
       error: err.message,
       email
     });

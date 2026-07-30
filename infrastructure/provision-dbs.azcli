@@ -30,4 +30,16 @@ az containerapp create --name redis \
   --min-replicas 1 \
   --max-replicas 1
 
+# Create RabbitMQ
+echo "📦 Creating RabbitMQ Broker..."
+az containerapp create --name rabbitmq \
+  --resource-group $RESOURCE_GROUP \
+  --environment $ENVIRONMENT \
+  --image rabbitmq:3-management-alpine \
+  --ingress internal \
+  --target-port 5672 \
+  --transport tcp \
+  --min-replicas 1 \
+  --max-replicas 1
+
 echo "🎉 Database Provisioning Complete!"

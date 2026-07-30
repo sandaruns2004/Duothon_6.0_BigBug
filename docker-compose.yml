@@ -34,6 +34,21 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: aegisvault-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - aegisvault-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api-gateway:
     build:
       context: ./services/api-gateway
@@ -46,12 +61,15 @@ services:
       - PORT=3000
       - JWT_SECRET=${JWT_SECRET:-aegisvault-super-secret-jwt-key-2026}
       - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       - AUTH_SERVICE_URL=http://auth-service:3001
       - ACCOUNT_SERVICE_URL=http://account-service:3002
       - TRANSACTION_SERVICE_URL=http://transaction-service:3003
       - NOTIFICATION_SERVICE_URL=http://notification-service:3004
       - ADMIN_SERVICE_URL=http://admin-service:3005
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       redis:
         condition: service_healthy
       auth-service:
@@ -79,11 +97,14 @@ services:
       - PORT=3001
       - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=auth_db
       - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       - JWT_SECRET=${JWT_SECRET:-aegisvault-super-secret-jwt-key-2026}
       - JWT_ACCESS_EXPIRES_IN=15m
       - JWT_REFRESH_EXPIRES_IN=7d
       - NOTIFICATION_SERVICE_URL=http://notification-service:3004
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       redis:
@@ -119,9 +140,12 @@ services:
     environment:
       - PORT=3003
       - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=txn_db
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       - ACCOUNT_SERVICE_URL=http://account-service:3002
       - NOTIFICATION_SERVICE_URL=http://notification-service:3004
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       account-service:
@@ -140,12 +164,15 @@ services:
     environment:
       - PORT=3004
       - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=notif_db
+      - RABBITMQ_URL=amqp://rabbitmq:5672
       - SMTP_HOST=${SMTP_HOST:-smtp.mailtrap.io}
       - SMTP_PORT=${SMTP_PORT:-2525}
       - SMTP_USER=${SMTP_USER:-test_smtp_user}
       - SMTP_PASS=${SMTP_PASS:-test_smtp_password}
       - SMTP_FROM=${SMTP_FROM:-"AegisVault Security <no-reply@aegisvault.com>"}
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     networks:
