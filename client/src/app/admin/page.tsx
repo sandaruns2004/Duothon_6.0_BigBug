@@ -325,6 +325,69 @@ export default function AdminDashboardPage() {
         </button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex flex-wrap border-b border-border/80 gap-6">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'users'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>User Directory & Governance ({users.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('fraud')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'fraud'
+              ? 'border-danger text-danger'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          <span>Fraud Alerts ({fraudAlerts.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('audit')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'audit'
+              ? 'border-emerald-500 text-emerald-400'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Terminal className="w-4 h-4" />
+          <span>Cryptographic Audit Chain ({auditLogs.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('loans')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'loans'
+              ? 'border-indigo-500 text-indigo-400'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+          <span>Pending Loans ({loans.filter((l) => l.status === 'PENDING').length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('transactions')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'transactions'
+              ? 'border-cyan-500 text-cyan-400'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>All Transactions ({transactions.length})</span>
+        </button>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="glass-card p-5 rounded-xl border-border/80">
@@ -440,68 +503,6 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap border-b border-border/80 gap-6">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'users'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>User Directory & Governance ({users.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('fraud')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'fraud'
-              ? 'border-danger text-danger'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <AlertTriangle className="w-4 h-4" />
-          <span>Fraud Alerts ({fraudAlerts.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'audit'
-              ? 'border-emerald-500 text-emerald-400'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Terminal className="w-4 h-4" />
-          <span>Cryptographic Audit Chain ({auditLogs.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('loans')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'loans'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Landmark className="w-4 h-4" />
-          <span>Pending Loans ({loans.filter((l) => l.status === 'PENDING').length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('transactions')}
-          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'transactions'
-              ? 'border-cyan-500 text-cyan-400'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          <span>All Transactions ({transactions.length})</span>
-        </button>
-      </div>
 
       {/* Tab 1: Users */}
       {activeTab === 'users' && (

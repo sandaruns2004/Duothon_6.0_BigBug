@@ -15,5 +15,7 @@ router.put('/users/:id/unlock', adminController.unlockUser);
 router.get('/fraud-alerts', adminController.listFraudAlerts);
 router.get('/transactions', adminController.listTransactions);
 router.get('/reports/daily', adminController.getDailyReports);
+router.get('/loans', adminController.listLoans);
+router.put('/loans/:id/approve', adminController.approveLoan);
 
 module.exports = router;

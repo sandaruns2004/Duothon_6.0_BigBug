@@ -1,6 +1,7 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
 const { sendAdminNotification } = require('../utils/notifier');
+const axios = require('axios');
 
 // ═══════════════════════════════════════════════════════════════════
 // Admin Controller (Dashboard Aggregation, User Governance, KYC Verification)
@@ -78,69 +79,13 @@ const getDashboard = async (req, res) => {
 
 /**
  * GET /api/admin/users
- * Lists users with search, pagination, and role/status filters
+ * Lists users by delegating to Auth Service
  */
 const listUsers = async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      search,
-      role,
-      kycStatus,
-      isLocked
-    } = req.query;
-
-    const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
-    const skip = (pageNum - 1) * limitNum;
-
-    const where = {};
-    if (role) where.role = role.toUpperCase();
-    if (kycStatus) where.kycStatus = kycStatus.toUpperCase();
-    if (isLocked !== undefined) where.isLocked = isLocked === 'true' || isLocked === true;
-
-    if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-        { nic: { contains: search, mode: 'insensitive' } }
-      ];
-    }
-
-    const [totalCount, users] = await Promise.all([
-      prisma.user.count({ where }),
-      prisma.user.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limitNum,
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          nic: true,
-          role: true,
-          kycStatus: true,
-          kycDocument: true,
-          failedAttempts: true,
-          isLocked: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      })
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      pagination: {
-        totalItems: totalCount,
-        currentPage: pageNum,
-        itemsPerPage: limitNum,
-        totalPages: Math.ceil(totalCount / limitNum)
-      },
-      users
-    });
+    const queryStr = new URLSearchParams(req.query).toString();
+    const response = await axios.get(`http://auth-service:3001/api/users/internal?${queryStr}`);
+    return res.status(200).json(response.data);
   } catch (err) {
     logger.error('List users error:', { error: err.message, stack: err.stack });
     return res.status(500).json({
@@ -220,29 +165,8 @@ const verifyUserKyc = async (req, res) => {
     const { id } = req.params;
     const { reason = 'KYC document verification approved by administrative officer' } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { id }
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User account not found.'
-      });
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data: { kycStatus: 'VERIFIED' },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isLocked: true,
-        kycStatus: true,
-        updatedAt: true
-      }
-    });
+    const response = await axios.put(`http://auth-service:3001/api/users/internal/${id}/kyc-verify`);
+    const updatedUser = response.data.user;
 
     // Record Admin Action
     await prisma.adminAction.create({
@@ -565,6 +489,41 @@ const getDailyReports = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/admin/loans
+ * Fetch all pending loans from Account Service
+ */
+const listLoans = async (req, res) => {
+  try {
+    const response = await axios.get('http://account-service:3002/api/loans/internal/pending');
+    return res.status(200).json(response.data);
+  } catch (err) {
+    logger.error('List loans error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve pending loans.'
+    });
+  }
+};
+
+/**
+ * PUT /api/admin/loans/:id/approve
+ * Approve a pending loan
+ */
+const approveLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await axios.put(`http://account-service:3002/api/loans/internal/${id}/approve`);
+    return res.status(200).json(response.data);
+  } catch (err) {
+    logger.error('Approve loan error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to approve loan.'
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   listUsers,
@@ -574,5 +533,7 @@ module.exports = {
   unlockUser,
   listFraudAlerts,
   listTransactions,
-  getDailyReports
+  getDailyReports,
+  listLoans,
+  approveLoan
 };

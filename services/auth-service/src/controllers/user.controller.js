@@ -201,8 +201,130 @@ const uploadKyc = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/users/internal
+ * Internal route for Admin Service to fetch user directory
+ */
+const getInternalUsers = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      role,
+      kycStatus,
+      isLocked
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = {};
+    if (role) where.role = role.toUpperCase();
+    if (kycStatus) where.kycStatus = kycStatus.toUpperCase();
+    if (isLocked !== undefined) where.isLocked = isLocked === 'true' || isLocked === true;
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { nic: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [totalCount, users] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+        select: {
+          id: true,
+          email: true,
+          phone: true,
+          nic: true,
+          role: true,
+          kycStatus: true,
+          kycDocument: true,
+          failedAttempts: true,
+          isLocked: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      pagination: {
+        totalItems: totalCount,
+        currentPage: pageNum,
+        itemsPerPage: limitNum,
+        totalPages: Math.ceil(totalCount / limitNum)
+      },
+      users
+    });
+  } catch (err) {
+    logger.error('List internal users error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to list users.'
+    });
+  }
+};
+
+/**
+ * PUT /api/users/internal/:id/kyc-verify
+ * Internal route for Admin Service to verify KYC
+ */
+const verifyInternalUserKyc = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User account not found.'
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { kycStatus: 'VERIFIED' },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isLocked: true,
+        kycStatus: true,
+        updatedAt: true
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'User KYC status verified successfully.',
+      user: updatedUser
+    });
+  } catch (err) {
+    logger.error('Verify internal KYC error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to verify user KYC status.'
+    });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
-  uploadKyc
+  uploadKyc,
+  getInternalUsers,
+  verifyInternalUserKyc
 };
