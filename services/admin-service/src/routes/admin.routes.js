@@ -12,6 +12,7 @@ router.put('/users/:id/suspend', adminController.suspendUser);
 router.put('/users/:id/verify', adminController.verifyUserKyc);
 router.put('/users/:id/unlock', adminController.unlockUser);
 router.get('/fraud-alerts', adminController.listFraudAlerts);
-
+router.get('/transactions', adminController.listTransactions);
+router.get('/reports/daily', adminController.getDailyReports);
 
 module.exports = router;
