@@ -192,6 +192,8 @@ export const adminApi = {
   getFraudAlerts: (params?: Record<string, unknown>) => api.get('/api/admin/fraud-alerts', { params }),
   getAuditLogs: (params?: Record<string, unknown>) => api.get('/api/audit', { params }),
   verifyChain: () => api.get('/api/audit/verify-chain'),
+  getTransactions: (params?: Record<string, unknown>) => api.get('/api/admin/transactions', { params }),
+  getDailyReports: () => api.get('/api/admin/reports/daily'),
 };
 
 export default api;
