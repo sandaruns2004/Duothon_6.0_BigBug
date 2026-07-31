@@ -14,8 +14,13 @@ const dispatchAsyncNotifications = async ({ transaction, fraudEvaluation, userEm
     try {
       // 1. Dispatch notification command (direct exchange)
       await rabbitmq.publishCommand('notify.send', {
+        userId: transaction.userId,
         to: userEmail || 'customer@aegisvault.com',
-        type: 'TRANSACTION_ALERT',
+        type: transaction.fraudFlag ? 'FRAUD_ALERT' : 'TRANSACTION_ALERT',
+        title: transaction.fraudFlag 
+          ? `🚨 Fraud Velocity Alert: LKR ${Number(transaction.amount).toLocaleString()}` 
+          : `⚡ Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
+        message: `Transfer of LKR ${Number(transaction.amount).toLocaleString()} (${transaction.status}) - Ref: ${transaction.referenceNumber}`,
         subject: `Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
         transactionId: transaction.id,
         referenceNumber: transaction.referenceNumber,

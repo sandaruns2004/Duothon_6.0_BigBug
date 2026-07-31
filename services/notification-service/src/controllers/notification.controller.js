@@ -36,10 +36,22 @@ const internalNotify = async (req, res) => {
     const notifTitle = title || subject || 'Security Notification';
     const notifMessage = message || text || `Alert from ${type}`;
 
+    let targetUserId = userId ? String(userId) : null;
+    if (!targetUserId && to) {
+      try {
+        const users = await prisma.$queryRawUnsafe(`SELECT id FROM auth_db.users WHERE email = $1 LIMIT 1`, to);
+        if (users && users.length > 0) {
+          targetUserId = String(users[0].id);
+        }
+      } catch (e) {
+        // ignore schema errors
+      }
+    }
+
     // 1. Store DB notification record
     const newNotif = await prisma.notification.create({
       data: {
-        userId: userId ? String(userId) : null,
+        userId: targetUserId,
         title: notifTitle,
         message: notifMessage,
         type,
