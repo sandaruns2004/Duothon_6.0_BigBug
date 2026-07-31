@@ -40,6 +40,90 @@ export type Account = $Result.DefaultSelection<Prisma.$AccountPayload>
 export type Transaction = $Result.DefaultSelection<Prisma.$TransactionPayload>
 
 /**
+ * Enums
+ */
+export namespace $Enums {
+  export const Role: {
+  CUSTOMER: 'CUSTOMER',
+  ADMIN: 'ADMIN',
+  OFFICER: 'OFFICER'
+};
+
+export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const KycStatus: {
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED'
+};
+
+export type KycStatus = (typeof KycStatus)[keyof typeof KycStatus]
+
+
+export const AccountType: {
+  SAVINGS: 'SAVINGS',
+  CURRENT: 'CURRENT',
+  BUSINESS: 'BUSINESS'
+};
+
+export type AccountType = (typeof AccountType)[keyof typeof AccountType]
+
+
+export const AccountStatus: {
+  ACTIVE: 'ACTIVE',
+  FROZEN: 'FROZEN',
+  CLOSED: 'CLOSED'
+};
+
+export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus]
+
+
+export const TransactionStatus: {
+  PENDING: 'PENDING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  FLAGGED: 'FLAGGED'
+};
+
+export type TransactionStatus = (typeof TransactionStatus)[keyof typeof TransactionStatus]
+
+
+export const TransactionType: {
+  TRANSFER: 'TRANSFER',
+  PAYMENT: 'PAYMENT',
+  DEPOSIT: 'DEPOSIT'
+};
+
+export type TransactionType = (typeof TransactionType)[keyof typeof TransactionType]
+
+}
+
+export type Role = $Enums.Role
+
+export const Role: typeof $Enums.Role
+
+export type KycStatus = $Enums.KycStatus
+
+export const KycStatus: typeof $Enums.KycStatus
+
+export type AccountType = $Enums.AccountType
+
+export const AccountType: typeof $Enums.AccountType
+
+export type AccountStatus = $Enums.AccountStatus
+
+export const AccountStatus: typeof $Enums.AccountStatus
+
+export type TransactionStatus = $Enums.TransactionStatus
+
+export const TransactionStatus: typeof $Enums.TransactionStatus
+
+export type TransactionType = $Enums.TransactionType
+
+export const TransactionType: typeof $Enums.TransactionType
+
+/**
  * ##  Prisma Client ʲˢ
  * 
  * Type-safe database client for TypeScript & Node.js
@@ -3003,8 +3087,8 @@ export namespace Prisma {
     phone: string | null
     nic: string | null
     passwordHash: string | null
-    role: string | null
-    kycStatus: string | null
+    role: $Enums.Role | null
+    kycStatus: $Enums.KycStatus | null
     failedAttempts: number | null
     isLocked: boolean | null
     createdAt: Date | null
@@ -3017,8 +3101,8 @@ export namespace Prisma {
     phone: string | null
     nic: string | null
     passwordHash: string | null
-    role: string | null
-    kycStatus: string | null
+    role: $Enums.Role | null
+    kycStatus: $Enums.KycStatus | null
     failedAttempts: number | null
     isLocked: boolean | null
     createdAt: Date | null
@@ -3184,8 +3268,8 @@ export namespace Prisma {
     phone: string
     nic: string
     passwordHash: string
-    role: string
-    kycStatus: string
+    role: $Enums.Role
+    kycStatus: $Enums.KycStatus
     failedAttempts: number
     isLocked: boolean
     createdAt: Date
@@ -3263,8 +3347,8 @@ export namespace Prisma {
       phone: string
       nic: string
       passwordHash: string
-      role: string
-      kycStatus: string
+      role: $Enums.Role
+      kycStatus: $Enums.KycStatus
       failedAttempts: number
       isLocked: boolean
       createdAt: Date
@@ -3667,8 +3751,8 @@ export namespace Prisma {
     readonly phone: FieldRef<"User", 'String'>
     readonly nic: FieldRef<"User", 'String'>
     readonly passwordHash: FieldRef<"User", 'String'>
-    readonly role: FieldRef<"User", 'String'>
-    readonly kycStatus: FieldRef<"User", 'String'>
+    readonly role: FieldRef<"User", 'Role'>
+    readonly kycStatus: FieldRef<"User", 'KycStatus'>
     readonly failedAttempts: FieldRef<"User", 'Int'>
     readonly isLocked: FieldRef<"User", 'Boolean'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
@@ -3985,10 +4069,10 @@ export namespace Prisma {
     id: string | null
     userId: string | null
     accountNumber: string | null
-    accountType: string | null
+    accountType: $Enums.AccountType | null
     balance: Decimal | null
     currency: string | null
-    status: string | null
+    status: $Enums.AccountStatus | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3997,10 +4081,10 @@ export namespace Prisma {
     id: string | null
     userId: string | null
     accountNumber: string | null
-    accountType: string | null
+    accountType: $Enums.AccountType | null
     balance: Decimal | null
     currency: string | null
-    status: string | null
+    status: $Enums.AccountStatus | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -4154,10 +4238,10 @@ export namespace Prisma {
     id: string
     userId: string
     accountNumber: string
-    accountType: string
+    accountType: $Enums.AccountType
     balance: Decimal
     currency: string
-    status: string
+    status: $Enums.AccountStatus
     createdAt: Date
     updatedAt: Date
     _count: AccountCountAggregateOutputType | null
@@ -4225,10 +4309,10 @@ export namespace Prisma {
       id: string
       userId: string
       accountNumber: string
-      accountType: string
+      accountType: $Enums.AccountType
       balance: Prisma.Decimal
       currency: string
-      status: string
+      status: $Enums.AccountStatus
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["account"]>
@@ -4627,10 +4711,10 @@ export namespace Prisma {
     readonly id: FieldRef<"Account", 'String'>
     readonly userId: FieldRef<"Account", 'String'>
     readonly accountNumber: FieldRef<"Account", 'String'>
-    readonly accountType: FieldRef<"Account", 'String'>
+    readonly accountType: FieldRef<"Account", 'AccountType'>
     readonly balance: FieldRef<"Account", 'Decimal'>
     readonly currency: FieldRef<"Account", 'String'>
-    readonly status: FieldRef<"Account", 'String'>
+    readonly status: FieldRef<"Account", 'AccountStatus'>
     readonly createdAt: FieldRef<"Account", 'DateTime'>
     readonly updatedAt: FieldRef<"Account", 'DateTime'>
   }
@@ -4949,8 +5033,8 @@ export namespace Prisma {
     toAccountId: string | null
     amount: Decimal | null
     currency: string | null
-    status: string | null
-    type: string | null
+    status: $Enums.TransactionStatus | null
+    type: $Enums.TransactionType | null
     description: string | null
     fraudFlag: boolean | null
     createdAt: Date | null
@@ -4965,8 +5049,8 @@ export namespace Prisma {
     toAccountId: string | null
     amount: Decimal | null
     currency: string | null
-    status: string | null
-    type: string | null
+    status: $Enums.TransactionStatus | null
+    type: $Enums.TransactionType | null
     description: string | null
     fraudFlag: boolean | null
     createdAt: Date | null
@@ -5142,8 +5226,8 @@ export namespace Prisma {
     toAccountId: string
     amount: Decimal
     currency: string
-    status: string
-    type: string
+    status: $Enums.TransactionStatus
+    type: $Enums.TransactionType
     description: string | null
     fraudFlag: boolean
     createdAt: Date
@@ -5229,8 +5313,8 @@ export namespace Prisma {
       toAccountId: string
       amount: Prisma.Decimal
       currency: string
-      status: string
-      type: string
+      status: $Enums.TransactionStatus
+      type: $Enums.TransactionType
       description: string | null
       fraudFlag: boolean
       createdAt: Date
@@ -5635,8 +5719,8 @@ export namespace Prisma {
     readonly toAccountId: FieldRef<"Transaction", 'String'>
     readonly amount: FieldRef<"Transaction", 'Decimal'>
     readonly currency: FieldRef<"Transaction", 'String'>
-    readonly status: FieldRef<"Transaction", 'String'>
-    readonly type: FieldRef<"Transaction", 'String'>
+    readonly status: FieldRef<"Transaction", 'TransactionStatus'>
+    readonly type: FieldRef<"Transaction", 'TransactionType'>
     readonly description: FieldRef<"Transaction", 'String'>
     readonly fraudFlag: FieldRef<"Transaction", 'Boolean'>
     readonly createdAt: FieldRef<"Transaction", 'DateTime'>
@@ -6088,6 +6172,34 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Role'
+   */
+  export type EnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role'>
+    
+
+
+  /**
+   * Reference to a field of type 'Role[]'
+   */
+  export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Role[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'KycStatus'
+   */
+  export type EnumKycStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'KycStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'KycStatus[]'
+   */
+  export type ListEnumKycStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'KycStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -6109,6 +6221,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'AccountType'
+   */
+  export type EnumAccountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountType'>
+    
+
+
+  /**
+   * Reference to a field of type 'AccountType[]'
+   */
+  export type ListEnumAccountTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountType[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Decimal'
    */
   export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -6119,6 +6245,48 @@ export namespace Prisma {
    * Reference to a field of type 'Decimal[]'
    */
   export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'AccountStatus'
+   */
+  export type EnumAccountStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'AccountStatus[]'
+   */
+  export type ListEnumAccountStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AccountStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'TransactionStatus'
+   */
+  export type EnumTransactionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TransactionStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'TransactionStatus[]'
+   */
+  export type ListEnumTransactionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TransactionStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'TransactionType'
+   */
+  export type EnumTransactionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TransactionType'>
+    
+
+
+  /**
+   * Reference to a field of type 'TransactionType[]'
+   */
+  export type ListEnumTransactionTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TransactionType[]'>
     
   /**
    * Deep Input Types
@@ -6240,8 +6408,8 @@ export namespace Prisma {
     phone?: StringFilter<"User"> | string
     nic?: StringFilter<"User"> | string
     passwordHash?: StringFilter<"User"> | string
-    role?: StringFilter<"User"> | string
-    kycStatus?: StringFilter<"User"> | string
+    role?: EnumRoleFilter<"User"> | $Enums.Role
+    kycStatus?: EnumKycStatusFilter<"User"> | $Enums.KycStatus
     failedAttempts?: IntFilter<"User"> | number
     isLocked?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
@@ -6271,8 +6439,8 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     passwordHash?: StringFilter<"User"> | string
-    role?: StringFilter<"User"> | string
-    kycStatus?: StringFilter<"User"> | string
+    role?: EnumRoleFilter<"User"> | $Enums.Role
+    kycStatus?: EnumKycStatusFilter<"User"> | $Enums.KycStatus
     failedAttempts?: IntFilter<"User"> | number
     isLocked?: BoolFilter<"User"> | boolean
     createdAt?: DateTimeFilter<"User"> | Date | string
@@ -6307,8 +6475,8 @@ export namespace Prisma {
     phone?: StringWithAggregatesFilter<"User"> | string
     nic?: StringWithAggregatesFilter<"User"> | string
     passwordHash?: StringWithAggregatesFilter<"User"> | string
-    role?: StringWithAggregatesFilter<"User"> | string
-    kycStatus?: StringWithAggregatesFilter<"User"> | string
+    role?: EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
+    kycStatus?: EnumKycStatusWithAggregatesFilter<"User"> | $Enums.KycStatus
     failedAttempts?: IntWithAggregatesFilter<"User"> | number
     isLocked?: BoolWithAggregatesFilter<"User"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -6322,10 +6490,10 @@ export namespace Prisma {
     id?: StringFilter<"Account"> | string
     userId?: StringFilter<"Account"> | string
     accountNumber?: StringFilter<"Account"> | string
-    accountType?: StringFilter<"Account"> | string
+    accountType?: EnumAccountTypeFilter<"Account"> | $Enums.AccountType
     balance?: DecimalFilter<"Account"> | Decimal | DecimalJsLike | number | string
     currency?: StringFilter<"Account"> | string
-    status?: StringFilter<"Account"> | string
+    status?: EnumAccountStatusFilter<"Account"> | $Enums.AccountStatus
     createdAt?: DateTimeFilter<"Account"> | Date | string
     updatedAt?: DateTimeFilter<"Account"> | Date | string
   }
@@ -6349,10 +6517,10 @@ export namespace Prisma {
     OR?: AccountWhereInput[]
     NOT?: AccountWhereInput | AccountWhereInput[]
     userId?: StringFilter<"Account"> | string
-    accountType?: StringFilter<"Account"> | string
+    accountType?: EnumAccountTypeFilter<"Account"> | $Enums.AccountType
     balance?: DecimalFilter<"Account"> | Decimal | DecimalJsLike | number | string
     currency?: StringFilter<"Account"> | string
-    status?: StringFilter<"Account"> | string
+    status?: EnumAccountStatusFilter<"Account"> | $Enums.AccountStatus
     createdAt?: DateTimeFilter<"Account"> | Date | string
     updatedAt?: DateTimeFilter<"Account"> | Date | string
   }, "id" | "accountNumber">
@@ -6381,10 +6549,10 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Account"> | string
     userId?: StringWithAggregatesFilter<"Account"> | string
     accountNumber?: StringWithAggregatesFilter<"Account"> | string
-    accountType?: StringWithAggregatesFilter<"Account"> | string
+    accountType?: EnumAccountTypeWithAggregatesFilter<"Account"> | $Enums.AccountType
     balance?: DecimalWithAggregatesFilter<"Account"> | Decimal | DecimalJsLike | number | string
     currency?: StringWithAggregatesFilter<"Account"> | string
-    status?: StringWithAggregatesFilter<"Account"> | string
+    status?: EnumAccountStatusWithAggregatesFilter<"Account"> | $Enums.AccountStatus
     createdAt?: DateTimeWithAggregatesFilter<"Account"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Account"> | Date | string
   }
@@ -6400,8 +6568,8 @@ export namespace Prisma {
     toAccountId?: StringFilter<"Transaction"> | string
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     currency?: StringFilter<"Transaction"> | string
-    status?: StringFilter<"Transaction"> | string
-    type?: StringFilter<"Transaction"> | string
+    status?: EnumTransactionStatusFilter<"Transaction"> | $Enums.TransactionStatus
+    type?: EnumTransactionTypeFilter<"Transaction"> | $Enums.TransactionType
     description?: StringNullableFilter<"Transaction"> | string | null
     fraudFlag?: BoolFilter<"Transaction"> | boolean
     createdAt?: DateTimeFilter<"Transaction"> | Date | string
@@ -6435,8 +6603,8 @@ export namespace Prisma {
     toAccountId?: StringFilter<"Transaction"> | string
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     currency?: StringFilter<"Transaction"> | string
-    status?: StringFilter<"Transaction"> | string
-    type?: StringFilter<"Transaction"> | string
+    status?: EnumTransactionStatusFilter<"Transaction"> | $Enums.TransactionStatus
+    type?: EnumTransactionTypeFilter<"Transaction"> | $Enums.TransactionType
     description?: StringNullableFilter<"Transaction"> | string | null
     fraudFlag?: BoolFilter<"Transaction"> | boolean
     createdAt?: DateTimeFilter<"Transaction"> | Date | string
@@ -6475,8 +6643,8 @@ export namespace Prisma {
     toAccountId?: StringWithAggregatesFilter<"Transaction"> | string
     amount?: DecimalWithAggregatesFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
     currency?: StringWithAggregatesFilter<"Transaction"> | string
-    status?: StringWithAggregatesFilter<"Transaction"> | string
-    type?: StringWithAggregatesFilter<"Transaction"> | string
+    status?: EnumTransactionStatusWithAggregatesFilter<"Transaction"> | $Enums.TransactionStatus
+    type?: EnumTransactionTypeWithAggregatesFilter<"Transaction"> | $Enums.TransactionType
     description?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
     fraudFlag?: BoolWithAggregatesFilter<"Transaction"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Transaction"> | Date | string
@@ -6601,8 +6769,8 @@ export namespace Prisma {
     phone: string
     nic: string
     passwordHash: string
-    role?: string
-    kycStatus?: string
+    role?: $Enums.Role
+    kycStatus?: $Enums.KycStatus
     failedAttempts?: number
     isLocked?: boolean
     createdAt?: Date | string
@@ -6615,8 +6783,8 @@ export namespace Prisma {
     phone: string
     nic: string
     passwordHash: string
-    role?: string
-    kycStatus?: string
+    role?: $Enums.Role
+    kycStatus?: $Enums.KycStatus
     failedAttempts?: number
     isLocked?: boolean
     createdAt?: Date | string
@@ -6629,8 +6797,8 @@ export namespace Prisma {
     phone?: StringFieldUpdateOperationsInput | string
     nic?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-    kycStatus?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    kycStatus?: EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
     failedAttempts?: IntFieldUpdateOperationsInput | number
     isLocked?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6643,8 +6811,8 @@ export namespace Prisma {
     phone?: StringFieldUpdateOperationsInput | string
     nic?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-    kycStatus?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    kycStatus?: EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
     failedAttempts?: IntFieldUpdateOperationsInput | number
     isLocked?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6657,8 +6825,8 @@ export namespace Prisma {
     phone: string
     nic: string
     passwordHash: string
-    role?: string
-    kycStatus?: string
+    role?: $Enums.Role
+    kycStatus?: $Enums.KycStatus
     failedAttempts?: number
     isLocked?: boolean
     createdAt?: Date | string
@@ -6671,8 +6839,8 @@ export namespace Prisma {
     phone?: StringFieldUpdateOperationsInput | string
     nic?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-    kycStatus?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    kycStatus?: EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
     failedAttempts?: IntFieldUpdateOperationsInput | number
     isLocked?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6685,8 +6853,8 @@ export namespace Prisma {
     phone?: StringFieldUpdateOperationsInput | string
     nic?: StringFieldUpdateOperationsInput | string
     passwordHash?: StringFieldUpdateOperationsInput | string
-    role?: StringFieldUpdateOperationsInput | string
-    kycStatus?: StringFieldUpdateOperationsInput | string
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    kycStatus?: EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
     failedAttempts?: IntFieldUpdateOperationsInput | number
     isLocked?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6697,10 +6865,10 @@ export namespace Prisma {
     id?: string
     userId: string
     accountNumber: string
-    accountType?: string
+    accountType?: $Enums.AccountType
     balance?: Decimal | DecimalJsLike | number | string
     currency?: string
-    status?: string
+    status?: $Enums.AccountStatus
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -6709,10 +6877,10 @@ export namespace Prisma {
     id?: string
     userId: string
     accountNumber: string
-    accountType?: string
+    accountType?: $Enums.AccountType
     balance?: Decimal | DecimalJsLike | number | string
     currency?: string
-    status?: string
+    status?: $Enums.AccountStatus
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -6721,10 +6889,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     accountNumber?: StringFieldUpdateOperationsInput | string
-    accountType?: StringFieldUpdateOperationsInput | string
+    accountType?: EnumAccountTypeFieldUpdateOperationsInput | $Enums.AccountType
     balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
+    status?: EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -6733,10 +6901,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     accountNumber?: StringFieldUpdateOperationsInput | string
-    accountType?: StringFieldUpdateOperationsInput | string
+    accountType?: EnumAccountTypeFieldUpdateOperationsInput | $Enums.AccountType
     balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
+    status?: EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -6745,10 +6913,10 @@ export namespace Prisma {
     id?: string
     userId: string
     accountNumber: string
-    accountType?: string
+    accountType?: $Enums.AccountType
     balance?: Decimal | DecimalJsLike | number | string
     currency?: string
-    status?: string
+    status?: $Enums.AccountStatus
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -6757,10 +6925,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     accountNumber?: StringFieldUpdateOperationsInput | string
-    accountType?: StringFieldUpdateOperationsInput | string
+    accountType?: EnumAccountTypeFieldUpdateOperationsInput | $Enums.AccountType
     balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
+    status?: EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -6769,10 +6937,10 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     userId?: StringFieldUpdateOperationsInput | string
     accountNumber?: StringFieldUpdateOperationsInput | string
-    accountType?: StringFieldUpdateOperationsInput | string
+    accountType?: EnumAccountTypeFieldUpdateOperationsInput | $Enums.AccountType
     balance?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
+    status?: EnumAccountStatusFieldUpdateOperationsInput | $Enums.AccountStatus
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -6785,8 +6953,8 @@ export namespace Prisma {
     toAccountId: string
     amount: Decimal | DecimalJsLike | number | string
     currency?: string
-    status?: string
-    type?: string
+    status?: $Enums.TransactionStatus
+    type?: $Enums.TransactionType
     description?: string | null
     fraudFlag?: boolean
     createdAt?: Date | string
@@ -6801,8 +6969,8 @@ export namespace Prisma {
     toAccountId: string
     amount: Decimal | DecimalJsLike | number | string
     currency?: string
-    status?: string
-    type?: string
+    status?: $Enums.TransactionStatus
+    type?: $Enums.TransactionType
     description?: string | null
     fraudFlag?: boolean
     createdAt?: Date | string
@@ -6817,8 +6985,8 @@ export namespace Prisma {
     toAccountId?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
+    status?: EnumTransactionStatusFieldUpdateOperationsInput | $Enums.TransactionStatus
+    type?: EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
     description?: NullableStringFieldUpdateOperationsInput | string | null
     fraudFlag?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6833,8 +7001,8 @@ export namespace Prisma {
     toAccountId?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
+    status?: EnumTransactionStatusFieldUpdateOperationsInput | $Enums.TransactionStatus
+    type?: EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
     description?: NullableStringFieldUpdateOperationsInput | string | null
     fraudFlag?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6849,8 +7017,8 @@ export namespace Prisma {
     toAccountId: string
     amount: Decimal | DecimalJsLike | number | string
     currency?: string
-    status?: string
-    type?: string
+    status?: $Enums.TransactionStatus
+    type?: $Enums.TransactionType
     description?: string | null
     fraudFlag?: boolean
     createdAt?: Date | string
@@ -6865,8 +7033,8 @@ export namespace Prisma {
     toAccountId?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
+    status?: EnumTransactionStatusFieldUpdateOperationsInput | $Enums.TransactionStatus
+    type?: EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
     description?: NullableStringFieldUpdateOperationsInput | string | null
     fraudFlag?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6881,8 +7049,8 @@ export namespace Prisma {
     toAccountId?: StringFieldUpdateOperationsInput | string
     amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     currency?: StringFieldUpdateOperationsInput | string
-    status?: StringFieldUpdateOperationsInput | string
-    type?: StringFieldUpdateOperationsInput | string
+    status?: EnumTransactionStatusFieldUpdateOperationsInput | $Enums.TransactionStatus
+    type?: EnumTransactionTypeFieldUpdateOperationsInput | $Enums.TransactionType
     description?: NullableStringFieldUpdateOperationsInput | string | null
     fraudFlag?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -7068,6 +7236,20 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type EnumRoleFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  }
+
+  export type EnumKycStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.KycStatus | EnumKycStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumKycStatusFilter<$PrismaModel> | $Enums.KycStatus
+  }
+
   export type IntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -7134,6 +7316,26 @@ export namespace Prisma {
     failedAttempts?: SortOrder
   }
 
+  export type EnumRoleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRoleFilter<$PrismaModel>
+    _max?: NestedEnumRoleFilter<$PrismaModel>
+  }
+
+  export type EnumKycStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.KycStatus | EnumKycStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumKycStatusWithAggregatesFilter<$PrismaModel> | $Enums.KycStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumKycStatusFilter<$PrismaModel>
+    _max?: NestedEnumKycStatusFilter<$PrismaModel>
+  }
+
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -7158,6 +7360,13 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type EnumAccountTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountType | EnumAccountTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountTypeFilter<$PrismaModel> | $Enums.AccountType
+  }
+
   export type DecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -7167,6 +7376,13 @@ export namespace Prisma {
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type EnumAccountStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountStatus | EnumAccountStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountStatusFilter<$PrismaModel> | $Enums.AccountStatus
   }
 
   export type AccountCountOrderByAggregateInput = {
@@ -7213,6 +7429,16 @@ export namespace Prisma {
     balance?: SortOrder
   }
 
+  export type EnumAccountTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountType | EnumAccountTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountTypeWithAggregatesFilter<$PrismaModel> | $Enums.AccountType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAccountTypeFilter<$PrismaModel>
+    _max?: NestedEnumAccountTypeFilter<$PrismaModel>
+  }
+
   export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -7227,6 +7453,30 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type EnumAccountStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountStatus | EnumAccountStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountStatusWithAggregatesFilter<$PrismaModel> | $Enums.AccountStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAccountStatusFilter<$PrismaModel>
+    _max?: NestedEnumAccountStatusFilter<$PrismaModel>
+  }
+
+  export type EnumTransactionStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionStatus | EnumTransactionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionStatusFilter<$PrismaModel> | $Enums.TransactionStatus
+  }
+
+  export type EnumTransactionTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionType | EnumTransactionTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionTypeFilter<$PrismaModel> | $Enums.TransactionType
   }
 
   export type TransactionCountOrderByAggregateInput = {
@@ -7285,6 +7535,26 @@ export namespace Prisma {
     amount?: SortOrder
   }
 
+  export type EnumTransactionStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionStatus | EnumTransactionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionStatusWithAggregatesFilter<$PrismaModel> | $Enums.TransactionStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTransactionStatusFilter<$PrismaModel>
+    _max?: NestedEnumTransactionStatusFilter<$PrismaModel>
+  }
+
+  export type EnumTransactionTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionType | EnumTransactionTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionTypeWithAggregatesFilter<$PrismaModel> | $Enums.TransactionType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTransactionTypeFilter<$PrismaModel>
+    _max?: NestedEnumTransactionTypeFilter<$PrismaModel>
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
@@ -7305,6 +7575,14 @@ export namespace Prisma {
     set?: string | null
   }
 
+  export type EnumRoleFieldUpdateOperationsInput = {
+    set?: $Enums.Role
+  }
+
+  export type EnumKycStatusFieldUpdateOperationsInput = {
+    set?: $Enums.KycStatus
+  }
+
   export type IntFieldUpdateOperationsInput = {
     set?: number
     increment?: number
@@ -7317,12 +7595,28 @@ export namespace Prisma {
     set?: boolean
   }
 
+  export type EnumAccountTypeFieldUpdateOperationsInput = {
+    set?: $Enums.AccountType
+  }
+
   export type DecimalFieldUpdateOperationsInput = {
     set?: Decimal | DecimalJsLike | number | string
     increment?: Decimal | DecimalJsLike | number | string
     decrement?: Decimal | DecimalJsLike | number | string
     multiply?: Decimal | DecimalJsLike | number | string
     divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EnumAccountStatusFieldUpdateOperationsInput = {
+    set?: $Enums.AccountStatus
+  }
+
+  export type EnumTransactionStatusFieldUpdateOperationsInput = {
+    set?: $Enums.TransactionStatus
+  }
+
+  export type EnumTransactionTypeFieldUpdateOperationsInput = {
+    set?: $Enums.TransactionType
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -7461,9 +7755,43 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedEnumRoleFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleFilter<$PrismaModel> | $Enums.Role
+  }
+
+  export type NestedEnumKycStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.KycStatus | EnumKycStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumKycStatusFilter<$PrismaModel> | $Enums.KycStatus
+  }
+
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedEnumRoleWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.Role | EnumRoleFieldRefInput<$PrismaModel>
+    in?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    notIn?: $Enums.Role[] | ListEnumRoleFieldRefInput<$PrismaModel>
+    not?: NestedEnumRoleWithAggregatesFilter<$PrismaModel> | $Enums.Role
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRoleFilter<$PrismaModel>
+    _max?: NestedEnumRoleFilter<$PrismaModel>
+  }
+
+  export type NestedEnumKycStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.KycStatus | EnumKycStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.KycStatus[] | ListEnumKycStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumKycStatusWithAggregatesFilter<$PrismaModel> | $Enums.KycStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumKycStatusFilter<$PrismaModel>
+    _max?: NestedEnumKycStatusFilter<$PrismaModel>
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -7490,6 +7818,13 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type NestedEnumAccountTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountType | EnumAccountTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountTypeFilter<$PrismaModel> | $Enums.AccountType
+  }
+
   export type NestedDecimalFilter<$PrismaModel = never> = {
     equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
@@ -7499,6 +7834,23 @@ export namespace Prisma {
     gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
     not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type NestedEnumAccountStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountStatus | EnumAccountStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountStatusFilter<$PrismaModel> | $Enums.AccountStatus
+  }
+
+  export type NestedEnumAccountTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountType | EnumAccountTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountType[] | ListEnumAccountTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountTypeWithAggregatesFilter<$PrismaModel> | $Enums.AccountType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAccountTypeFilter<$PrismaModel>
+    _max?: NestedEnumAccountTypeFilter<$PrismaModel>
   }
 
   export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
@@ -7515,6 +7867,50 @@ export namespace Prisma {
     _sum?: NestedDecimalFilter<$PrismaModel>
     _min?: NestedDecimalFilter<$PrismaModel>
     _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type NestedEnumAccountStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AccountStatus | EnumAccountStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AccountStatus[] | ListEnumAccountStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumAccountStatusWithAggregatesFilter<$PrismaModel> | $Enums.AccountStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAccountStatusFilter<$PrismaModel>
+    _max?: NestedEnumAccountStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumTransactionStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionStatus | EnumTransactionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionStatusFilter<$PrismaModel> | $Enums.TransactionStatus
+  }
+
+  export type NestedEnumTransactionTypeFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionType | EnumTransactionTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionTypeFilter<$PrismaModel> | $Enums.TransactionType
+  }
+
+  export type NestedEnumTransactionStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionStatus | EnumTransactionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionStatus[] | ListEnumTransactionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionStatusWithAggregatesFilter<$PrismaModel> | $Enums.TransactionStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTransactionStatusFilter<$PrismaModel>
+    _max?: NestedEnumTransactionStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumTransactionTypeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.TransactionType | EnumTransactionTypeFieldRefInput<$PrismaModel>
+    in?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.TransactionType[] | ListEnumTransactionTypeFieldRefInput<$PrismaModel>
+    not?: NestedEnumTransactionTypeWithAggregatesFilter<$PrismaModel> | $Enums.TransactionType
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumTransactionTypeFilter<$PrismaModel>
+    _max?: NestedEnumTransactionTypeFilter<$PrismaModel>
   }
 
 

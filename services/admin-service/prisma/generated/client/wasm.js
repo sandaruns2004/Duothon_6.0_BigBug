@@ -194,7 +194,42 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.Role = exports.$Enums.Role = {
+  CUSTOMER: 'CUSTOMER',
+  ADMIN: 'ADMIN',
+  OFFICER: 'OFFICER'
+};
 
+exports.KycStatus = exports.$Enums.KycStatus = {
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED'
+};
+
+exports.AccountType = exports.$Enums.AccountType = {
+  SAVINGS: 'SAVINGS',
+  CURRENT: 'CURRENT',
+  BUSINESS: 'BUSINESS'
+};
+
+exports.AccountStatus = exports.$Enums.AccountStatus = {
+  ACTIVE: 'ACTIVE',
+  FROZEN: 'FROZEN',
+  CLOSED: 'CLOSED'
+};
+
+exports.TransactionStatus = exports.$Enums.TransactionStatus = {
+  PENDING: 'PENDING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+  FLAGGED: 'FLAGGED'
+};
+
+exports.TransactionType = exports.$Enums.TransactionType = {
+  TRANSFER: 'TRANSFER',
+  PAYMENT: 'PAYMENT',
+  DEPOSIT: 'DEPOSIT'
+};
 
 exports.Prisma.ModelName = {
   SystemMetric: 'SystemMetric',
