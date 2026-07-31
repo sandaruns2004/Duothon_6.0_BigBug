@@ -67,9 +67,10 @@ const applyLoan = async (req, res) => {
       });
     }
 
-    const { accountId, amount, termMonths, interestRate = 12.5, status } = req.body;
+    const { accountId, accountNumber, amount, termMonths, tenorMonths, interestRate = 12.5, purpose, status } = req.body;
+    const targetAccountId = accountId || accountNumber;
     const P = Number(amount);
-    const n = Number(termMonths);
+    const n = Number(termMonths || tenorMonths);
     const rate = Number(interestRate);
 
     if (isNaN(P) || P <= 0 || isNaN(n) || n <= 0 || isNaN(rate) || rate < 0) {
@@ -79,12 +80,33 @@ const applyLoan = async (req, res) => {
       });
     }
 
+    // Enforce KYC verification prerequisite with informative error message
+    try {
+      const userRows = await prisma.$queryRawUnsafe(
+        "SELECT kyc_status FROM auth_db.users WHERE id = $1",
+        String(userId)
+      );
+      if (userRows && userRows.length > 0) {
+        const kycStatus = userRows[0].kyc_status;
+        if (kycStatus !== 'VERIFIED') {
+          return res.status(403).json({
+            success: false,
+            error: `Identity verification (KYC) required. Your current KYC status is ${kycStatus || 'UNVERIFIED'}. Please navigate to Profile & KYC to upload your Sri Lankan NIC or Passport and await Admin verification before applying for financing.`,
+            kycStatus: kycStatus || 'UNVERIFIED',
+            code: 'KYC_NOT_VERIFIED'
+          });
+        }
+      }
+    } catch (kycErr) {
+      logger.warn('Could not verify KYC status from auth_db:', { error: kycErr.message });
+    }
+
     // Verify target account exists and is active
     const account = await prisma.account.findFirst({
       where: {
         OR: [
-          { id: accountId },
-          { accountNumber: accountId }
+          { id: targetAccountId },
+          { accountNumber: targetAccountId }
         ]
       }
     });
@@ -401,26 +423,25 @@ const payInstallment = async (req, res) => {
         where: { id: loanId },
         include: { account: true }
       });
-    } else if (accountNumber) {
-      const acc = await prisma.account.findFirst({
-        where: { accountNumber: String(accountNumber) },
-        include: { loans: { orderBy: { createdAt: 'desc' } } }
-      });
-      if (acc && acc.loans.length > 0) {
-        loan = acc.loans[0];
-        loan.account = acc;
+    }
+
+    let account = loan ? loan.account : null;
+    if (!loan) {
+      // Standalone EMI auto-debit simulation from calculator when no active loan exists yet
+      if (accountNumber) {
+        account = await prisma.account.findFirst({
+          where: { accountNumber: String(accountNumber) }
+        });
+      }
+      if (!account) {
+        return res.status(404).json({
+          success: false,
+          error: 'Active loan or valid target account not found for installment payment simulation.'
+        });
       }
     }
 
-    if (!loan) {
-      return res.status(404).json({
-        success: false,
-        error: 'Active loan not found for installment payment.'
-      });
-    }
-
-    const account = loan.account;
-    const paymentAmount = Number(amount || loan.monthlyPayment);
+    const paymentAmount = Number(amount || (loan ? loan.monthlyPayment : 0));
 
     if (isNaN(paymentAmount) || paymentAmount <= 0) {
       return res.status(400).json({
@@ -448,17 +469,16 @@ const payInstallment = async (req, res) => {
     recordLedgerTransaction({
       userId: userId ? String(userId) : account.userId,
       fromAccountId: account.accountNumber,
-      toAccountId: 'AEGISVAULT-FINANCE',
+      toAccountId: 'AEGISVAULT-LOAN-REPAY',
       amount: paymentAmount,
       currency: account.currency || 'LKR',
       type: 'PAYMENT',
-      status: 'SUCCESS',
       referenceNumber: refNum,
-      description: `Loan EMI Deduction - Installment Cut for Loan #${loan.id.slice(0, 8)}`
+      description: loan ? `Loan EMI Deduction - Installment Cut for Loan #${loan.id.slice(0, 8)}` : `Simulated EMI Auto-Debit Installment Deduction`
     });
 
-    logger.info('💸 Loan EMI installment deducted successfully:', {
-      loanId: loan.id,
+    logger.info('💸 EMI installment deducted successfully:', {
+      loanId: loan ? loan.id : 'SIM-LOAN',
       accountNumber: account.accountNumber,
       amount: paymentAmount,
       referenceNumber: refNum
@@ -472,7 +492,7 @@ const payInstallment = async (req, res) => {
         amount: paymentAmount,
         type: 'PAYMENT',
         status: 'SUCCESS',
-        description: `Loan EMI Deduction - Installment Cut for Loan #${loan.id.slice(0, 8)}`
+        description: loan ? `Loan EMI Deduction - Installment Cut for Loan #${loan.id.slice(0, 8)}` : `Simulated EMI Auto-Debit Installment Deduction`
       }
     });
   } catch (err) {

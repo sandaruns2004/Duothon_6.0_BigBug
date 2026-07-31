@@ -150,14 +150,22 @@ const uploadKyc = async (req, res) => {
 
     const { nic, kycDocument } = req.body;
 
+    // Persist document reference in Azure Blob Storage container until admin review
+    const blobContainer = process.env.AZURE_BLOB_CONTAINER || 'aegisvault-kyc-private';
+    const blobRef = kycDocument ? (kycDocument.startsWith('azure-blob://') ? kycDocument : `azure-blob://${blobContainer}/${kycDocument}`) : null;
+
+    const updateData = {
+      kycDocument: blobRef || kycDocument,
+      kycStatus: 'PENDING' // Awaiting admin review
+    };
+    if (nic && typeof nic === 'string' && nic.trim() !== '' && nic.trim() !== 'N/A') {
+      updateData.nic = nic.trim();
+    }
+
     // Verify NIC matches user's registered NIC or update it
     const updatedUser = await prisma.user.update({
       where: { id: String(userId) },
-      data: {
-        nic,
-        kycDocument,
-        kycStatus: 'PENDING' // Changed from VERIFIED to require admin review
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,

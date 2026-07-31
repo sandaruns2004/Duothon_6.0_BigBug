@@ -27,24 +27,47 @@ const executeTransferSchema = z.object({
 }));
 
 const createLoanSchema = z.object({
-  accountId: z.string().min(1, 'Account ID is required'),
+  accountId: z.string().optional(),
+  accountNumber: z.string().optional(),
   amount: z.union([z.number().positive(), z.string()]),
   termMonths: z.union([
     z.number().int().positive('Term must be a positive integer in months'),
     z.string().regex(/^\d+$/, 'Term must be a positive integer in months')
-  ]),
+  ]).optional(),
+  tenorMonths: z.union([
+    z.number().int().positive('Term must be a positive integer in months'),
+    z.string().regex(/^\d+$/, 'Term must be a positive integer in months')
+  ]).optional(),
   interestRate: z.union([z.number().positive(), z.string()]).optional().default(12.5),
+  purpose: z.string().optional(),
   status: z.enum(['PENDING', 'APPROVED', 'ACTIVE', 'PAID']).optional()
-});
+}).refine((data) => data.accountId || data.accountNumber, {
+  message: 'Account ID or Account Number is required'
+}).refine((data) => data.termMonths || data.tenorMonths, {
+  message: 'Term in months (termMonths or tenorMonths) is required'
+}).transform((data) => ({
+  ...data,
+  accountId: data.accountId || data.accountNumber,
+  termMonths: data.termMonths || data.tenorMonths
+}));
 
 const calculateLoanSchema = z.object({
   amount: z.union([z.number().positive(), z.string()]),
   termMonths: z.union([
     z.number().int().positive('Term must be a positive integer in months'),
     z.string().regex(/^\d+$/, 'Term must be a positive integer in months')
-  ]),
+  ]).optional(),
+  tenorMonths: z.union([
+    z.number().int().positive('Term must be a positive integer in months'),
+    z.string().regex(/^\d+$/, 'Term must be a positive integer in months')
+  ]).optional(),
   interestRate: z.union([z.number().positive(), z.string()]).optional().default(12.5)
-});
+}).refine((data) => data.termMonths || data.tenorMonths, {
+  message: 'Term in months (termMonths or tenorMonths) is required'
+}).transform((data) => ({
+  ...data,
+  termMonths: data.termMonths || data.tenorMonths
+}));
 
 const billPaymentSchema = z.object({
   accountId: z.string().min(1, 'Source account ID is required'),

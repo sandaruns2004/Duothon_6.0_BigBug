@@ -170,10 +170,13 @@ export default function PaymentsAndLoansPage() {
     setLoanLoading(true);
 
     try {
+      const targetAcc = userAccountNumber || '810000000001';
       const res = await accountApi.applyLoan({
-        accountNumber: userAccountNumber || '810000000001',
+        accountId: targetAcc,
+        accountNumber: targetAcc,
         amount: loanAmount,
         interestRate,
+        termMonths: tenorMonths,
         tenorMonths,
         purpose: 'Personal Wealth Expansion'
       });

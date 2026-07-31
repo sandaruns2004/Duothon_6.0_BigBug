@@ -43,7 +43,7 @@ const updateProfileSchema = z.object({
 });
 
 const kycUploadSchema = z.object({
-  nic: z.string().min(8, 'NIC must be at least 8 characters long'),
+  nic: z.string().optional(),
   kycDocument: z.string().min(1, 'KYC document reference is required')
 });
 
