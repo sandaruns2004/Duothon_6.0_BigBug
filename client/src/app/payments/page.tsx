@@ -131,6 +131,7 @@ export default function PaymentsAndLoansPage() {
 
       if (res.data?.success) {
         setBillSuccess(`Bill/Reload payment of ${amountNum.toFixed(2)} LKR to ${biller} successful! Recorded in Transactions Ledger.`);
+        window.dispatchEvent(new Event('notification-updated'));
         setAccountNumber('');
         setBillAmount('');
       }
@@ -154,6 +155,7 @@ export default function PaymentsAndLoansPage() {
       });
       if (res.data?.success) {
         setLoanSuccess(`EMI Auto-Debit simulation: LKR ${monthlyEMI.toLocaleString()} deducted from Account #${targetAcc}. View in Transactions tab!`);
+        window.dispatchEvent(new Event('notification-updated'));
       }
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { error?: string } } };
@@ -183,6 +185,7 @@ export default function PaymentsAndLoansPage() {
 
       if (res.data?.success) {
         setLoanSuccess(`Loan application of ${loanAmount.toLocaleString()} LKR submitted! Loan ID: ${res.data.loan?.id || 'LOAN-2026-901'}`);
+        window.dispatchEvent(new Event('notification-updated'));
       }
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { error?: string } } };

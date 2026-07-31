@@ -121,6 +121,7 @@ export default function ProfileAndNotificationsPage() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
       );
+      window.dispatchEvent(new Event('notification-updated'));
     }
   };
 
@@ -129,6 +130,7 @@ export default function ProfileAndNotificationsPage() {
       await notifApi.markAllAsRead();
     } finally {
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      window.dispatchEvent(new Event('notification-updated'));
     }
   };
 

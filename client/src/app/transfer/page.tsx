@@ -125,6 +125,7 @@ export default function TransferPage() {
             : a
         ));
         setShowConfirmModal(false);
+        window.dispatchEvent(new Event('notification-updated'));
         setSuccessReceipt({
           referenceNumber: res.data.transaction?.referenceNumber || `TXN-${Date.now().toString().slice(-6)}`,
           fromAccount,

@@ -1,6 +1,7 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
 const { recordLedgerTransaction } = require('../utils/ledger');
+const { sendAccountNotification } = require('../utils/notifier');
 
 
 // ═══════════════════════════════════════════════════════════════════
@@ -196,6 +197,14 @@ const applyLoan = async (req, res) => {
       termMonths: n,
       monthlyPayment,
       status: result.status
+    });
+
+    sendAccountNotification({
+      userId,
+      title: `🏦 Loan Application Submitted: LKR ${P.toLocaleString()}`,
+      message: `Your loan application for ${P.toLocaleString()} LKR (${n} months @ ${rate}% APR) is currently ${result.status}.`,
+      type: 'TRANSACTION',
+      email: req.headers['x-user-email']
     });
 
     return res.status(201).json({
@@ -482,6 +491,14 @@ const payInstallment = async (req, res) => {
       accountNumber: account.accountNumber,
       amount: paymentAmount,
       referenceNumber: refNum
+    });
+
+    sendAccountNotification({
+      userId: userId ? String(userId) : account.userId,
+      title: `💳 EMI Installment Paid: LKR ${paymentAmount.toLocaleString()}`,
+      message: `EMI installment of ${paymentAmount.toLocaleString()} LKR deducted from Account ${account.accountNumber} (Ref: ${refNum}).`,
+      type: 'TRANSACTION',
+      email: req.headers['x-user-email']
     });
 
     return res.status(200).json({

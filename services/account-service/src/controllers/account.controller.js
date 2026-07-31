@@ -2,6 +2,7 @@ const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
 const { generateAccountNumber, generateReceiptNumber } = require('../utils/accountGenerator');
 const { recordLedgerTransaction } = require('../utils/ledger');
+const { sendAccountNotification } = require('../utils/notifier');
 
 
 // ═══════════════════════════════════════════════════════════════════
@@ -410,6 +411,14 @@ const payBill = async (req, res) => {
       receiptNumber: receipt.receiptNumber,
       biller: receipt.biller,
       amount: paymentAmount
+    });
+
+    sendAccountNotification({
+      userId,
+      title: `💡 Utility Bill Paid: LKR ${paymentAmount.toLocaleString()}`,
+      message: `Paid ${paymentAmount.toLocaleString()} LKR to ${targetBiller} (Ref: ${targetReference}). Receipt: ${receipt.receiptNumber}`,
+      type: 'TRANSACTION',
+      email: req.headers['x-user-email']
     });
 
     return res.status(201).json({

@@ -51,8 +51,15 @@ export default function Navbar() {
     };
 
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchUnread, 3000);
+    window.addEventListener('notification-updated', fetchUnread);
+    window.addEventListener('focus', fetchUnread);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notification-updated', fetchUnread);
+      window.removeEventListener('focus', fetchUnread);
+    };
   }, [pathname]);
 
   const handleLogout = async () => {
