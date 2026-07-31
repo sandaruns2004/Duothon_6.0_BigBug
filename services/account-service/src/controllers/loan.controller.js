@@ -522,6 +522,61 @@ const payInstallment = async (req, res) => {
 };
 
 /**
+ * GET /api/loans/internal/pending
+ * Internal route for Admin Service to fetch all pending loans
+ */
+const getInternalPendingLoans = async (req, res) => {
+  try {
+    const loans = await prisma.loan.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        account: {
+          select: {
+            id: true,
+            accountNumber: true,
+            accountType: true,
+            currency: true
+          }
+        }
+      }
+    });
+
+    const formattedLoans = loans.map((loan) => {
+      const amountNum = Number(loan.amount);
+      const interestRateNum = Number(loan.interestRate);
+      const monthlyPaymentNum = Number(loan.monthlyPayment);
+      return {
+        ...loan,
+        amount: amountNum,
+        interestRate: interestRateNum,
+        monthlyPayment: monthlyPaymentNum,
+        paymentStatus: loan.status,
+        amortizationSchedule: generateAmortizationSchedule(
+          amountNum,
+          interestRateNum,
+          loan.termMonths,
+          monthlyPaymentNum,
+          loan.createdAt
+        )
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: formattedLoans.length,
+      loans: formattedLoans
+    });
+  } catch (err) {
+    logger.error('List internal pending loans error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve pending loans.'
+    });
+  }
+};
+
+/**
  * Admin action: Approve pending loan and credit balance
  */
 const approveLoan = async (req, res) => {
@@ -582,6 +637,8 @@ module.exports = {
   calculateLoan,
   payInstallment,
   generateAmortizationSchedule,
-  approveLoan
+  approveLoan,
+  getInternalPendingLoans,
+  approveInternalLoan: approveLoan
 };
 

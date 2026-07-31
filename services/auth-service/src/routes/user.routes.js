@@ -11,6 +11,9 @@ const {
 // User Profile & KYC Routes (/api/users)
 // ═══════════════════════════════════════════════════════════════════
 
+router.get('/internal', userController.getInternalUsers);
+router.put('/internal/:id/kyc-verify', userController.verifyInternalUserKyc);
+
 router.get('/profile', userController.getProfile);
 router.put('/profile', validate(updateProfileSchema), userController.updateProfile);
 router.post('/kyc', validate(kycUploadSchema), userController.uploadKyc);
