@@ -15,7 +15,10 @@ import {
   RefreshCw, 
   ShieldCheck, 
   Terminal, 
-  UserCheck 
+  UserCheck,
+  FileText,
+  Landmark,
+  X
 } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import { 
@@ -39,7 +42,20 @@ interface UserItem {
   nic: string;
   role: string;
   kycStatus: string;
+  kycDocument?: string;
   isLocked: boolean;
+  createdAt: string;
+}
+
+interface LoanItem {
+  id: string;
+  userId: string;
+  accountId: string;
+  amount: number | string;
+  interestRate: number | string;
+  termMonths: number;
+  monthlyPayment: number | string;
+  status: string;
   createdAt: string;
 }
 
@@ -65,8 +81,10 @@ interface AuditLogItem {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'users' | 'fraud' | 'audit'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'fraud' | 'audit' | 'loans'>('users');
   const [loading, setLoading] = useState(true);
+  const [loans, setLoans] = useState<LoanItem[]>([]);
+  const [selectedKycUser, setSelectedKycUser] = useState<UserItem | null>(null);
 
   // Role-based redirect guard: Non-admins should not access /admin
   useEffect(() => {
@@ -106,15 +124,20 @@ export default function AdminDashboardPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [dashRes, usersRes, fraudRes, auditRes] = await Promise.all([
+      const [dashRes, usersRes, fraudRes, auditRes, loansRes] = await Promise.all([
         adminApi.getDashboard().catch(() => null),
         adminApi.getUsers({ limit: 30 }).catch(() => null),
         adminApi.getFraudAlerts({ limit: 20 }).catch(() => null),
-        adminApi.getAuditLogs({ limit: 20 }).catch(() => null)
+        adminApi.getAuditLogs({ limit: 20 }).catch(() => null),
+        adminApi.getLoans().catch(() => null)
       ]);
 
       if (dashRes?.data?.success && dashRes.data.dashboard) {
         setStats(dashRes.data.dashboard);
+      }
+
+      if (loansRes?.data?.success && Array.isArray(loansRes.data.loans)) {
+        setLoans(loansRes.data.loans);
       }
 
       if (usersRes?.data?.success && Array.isArray(usersRes.data.users)) {
@@ -212,6 +235,17 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleApproveLoan = async (id: string) => {
+    try {
+      await adminApi.approveLoan(id);
+      setLoans((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, status: 'APPROVED' } : l))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Governance actions
   const handleSuspend = async (id: string) => {
@@ -456,6 +490,18 @@ export default function AdminDashboardPage() {
           <Terminal className="w-4 h-4" />
           <span>Cryptographic Audit Chain ({auditLogs.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('loans')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'loans'
+              ? 'border-indigo-500 text-indigo-400'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Landmark className="w-4 h-4" />
+          <span>Pending Loans ({loans.filter((l) => l.status === 'PENDING').length})</span>
+        </button>
       </div>
 
       {/* Tab 1: Users */}
@@ -528,14 +574,26 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       {u.kycStatus !== 'VERIFIED' && (
-                        <button
-                          onClick={() => handleVerifyKyc(u.id)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1"
-                          title="Verify KYC"
-                        >
-                          <UserCheck className="w-3.5 h-3.5" />
-                          <span>Verify</span>
-                        </button>
+                        <>
+                          {u.kycDocument && (
+                            <button
+                              onClick={() => setSelectedKycUser(u)}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-400 border border-indigo-500/30 text-xs font-semibold inline-flex items-center gap-1 mr-2"
+                              title="View KYC Document"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>View KYC</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleVerifyKyc(u.id)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1"
+                            title="Verify KYC"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>Verify</span>
+                          </button>
+                        </>
                       )}
 
                       {u.isLocked ? (
@@ -705,6 +763,140 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Tab 4: Pending Loans */}
+      {activeTab === 'loans' && (
+        <div className="glass-card p-6 rounded-2xl border-border/80 shadow-glass space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-indigo-400" />
+              <span>Pending Loan Applications</span>
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/60 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">Loan ID</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Term</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40 text-sm">
+                {loans.map((l) => (
+                  <tr key={l.id} className="hover:bg-surface-card/60 transition-colors">
+                    <td className="py-3.5 px-4 font-mono text-xs text-gray-300">
+                      {l.id.slice(0, 8)}...
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs font-bold text-white">
+                      {Number(l.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} LKR
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs text-gray-300">
+                      {l.termMonths} Months @ {l.interestRate}%
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          l.status === 'APPROVED'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-warning/15 text-warning border border-warning/30'
+                        }`}
+                      >
+                        {l.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      {l.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleApproveLoan(l.id)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Approve</span>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {loans.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-sm text-gray-500">
+                      No loan applications found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Document Modal */}
+      <AnimatePresence>
+        {selectedKycUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#111827] border border-border/80 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+            >
+              <div className="p-4 border-b border-border/60 flex items-center justify-between bg-surface/50">
+                <h3 className="text-white font-bold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-400" />
+                  <span>KYC Document Review</span>
+                </h3>
+                <button
+                  onClick={() => setSelectedKycUser(null)}
+                  className="p-1 text-gray-400 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center bg-black/20 p-3 rounded-lg border border-border/50">
+                  <span className="text-xs text-gray-400">User Email</span>
+                  <span className="text-sm font-mono text-white">{selectedKycUser.email}</span>
+                </div>
+                <div className="flex justify-between items-center bg-black/20 p-3 rounded-lg border border-border/50">
+                  <span className="text-xs text-gray-400">NIC</span>
+                  <span className="text-sm font-mono text-white uppercase">{selectedKycUser.nic}</span>
+                </div>
+                <div className="space-y-2 mt-4">
+                  <span className="text-xs text-gray-400 block">Uploaded Document:</span>
+                  <div className="w-full h-40 bg-surface/30 border border-dashed border-indigo-500/30 rounded-xl flex items-center justify-center flex-col gap-2">
+                    <FileText className="w-8 h-8 text-indigo-400/50" />
+                    <span className="text-sm text-indigo-300 font-mono">
+                      {selectedKycUser.kycDocument || 'Document reference not found'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 border-t border-border/60 bg-surface/50 flex justify-end gap-3">
+                <button
+                  onClick={() => setSelectedKycUser(null)}
+                  className="px-4 py-2 text-sm font-semibold text-gray-300 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleVerifyKyc(selectedKycUser.id);
+                    setSelectedKycUser(null);
+                  }}
+                  className="px-4 py-2 text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg shadow-lg flex items-center gap-2"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Approve KYC</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

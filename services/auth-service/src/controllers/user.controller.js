@@ -156,7 +156,7 @@ const uploadKyc = async (req, res) => {
       data: {
         nic,
         kycDocument,
-        kycStatus: 'VERIFIED' // Automatic verification for Phase 2 immediate testing/transactions
+        kycStatus: 'PENDING' // Changed from VERIFIED to require admin review
       },
       select: {
         id: true,
@@ -168,11 +168,11 @@ const uploadKyc = async (req, res) => {
       }
     });
 
-    logger.info('✅ KYC Verification completed for user:', { userId, nic, status: 'VERIFIED' });
+    logger.info('✅ KYC Verification submitted for user:', { userId, nic, status: 'PENDING' });
 
     return res.status(200).json({
       success: true,
-      message: 'KYC documents submitted and verified successfully.',
+      message: 'KYC documents submitted successfully. Awaiting admin verification.',
       profile: updatedUser
     });
   } catch (err) {

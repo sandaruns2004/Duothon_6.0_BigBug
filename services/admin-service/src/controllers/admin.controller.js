@@ -121,6 +121,7 @@ const listUsers = async (req, res) => {
           nic: true,
           role: true,
           kycStatus: true,
+          kycDocument: true,
           failedAttempts: true,
           isLocked: true,
           createdAt: true,

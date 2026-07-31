@@ -113,7 +113,7 @@ const applyLoan = async (req, res) => {
     }
     monthlyPayment = Number(monthlyPayment.toFixed(2));
 
-    const loanStatus = status || 'APPROVED';
+    const loanStatus = status || 'PENDING';
 
     // Store loan and increment account balance if approved/active
     const result = await prisma.$transaction(async (tx) => {
@@ -484,12 +484,60 @@ const payInstallment = async (req, res) => {
   }
 };
 
+/**
+ * Admin action: Approve pending loan and credit balance
+ */
+const approveLoan = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const loan = await prisma.loan.findUnique({
+      where: { id },
+      include: { account: true }
+    });
+
+    if (!loan) {
+      return res.status(404).json({ success: false, error: 'Loan not found.' });
+    }
+
+    if (loan.status !== 'PENDING') {
+      return res.status(400).json({ success: false, error: `Loan is already in ${loan.status} status.` });
+    }
+
+    const updatedLoan = await prisma.$transaction(async (tx) => {
+      const l = await tx.loan.update({
+        where: { id },
+        data: { status: 'APPROVED' }
+      });
+
+      await tx.account.update({
+        where: { id: loan.accountId },
+        data: { balance: { increment: loan.amount } }
+      });
+
+      return l;
+    });
+
+    logger.info('✅ Loan approved and credited to account:', { loanId: id, accountId: loan.accountId, amount: Number(loan.amount) });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Loan approved successfully and funds credited to account.',
+      loan: updatedLoan
+    });
+  } catch (err) {
+    logger.error('Loan approval error:', { error: err.message });
+    return res.status(500).json({ success: false, error: 'Failed to approve loan.' });
+  }
+};
+
 module.exports = {
   applyLoan,
   listLoans,
   getLoan,
   calculateLoan,
   payInstallment,
-  generateAmortizationSchedule
+  generateAmortizationSchedule,
+  approveLoan
 };
 

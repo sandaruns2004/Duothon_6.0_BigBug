@@ -13,7 +13,7 @@ import {
   Phone, 
   CreditCard 
 } from 'lucide-react';
-import { notifApi, authApi } from '@/lib/api';
+import api, { notifApi, authApi } from '@/lib/api';
 import { motion } from 'framer-motion';
 
 interface Notification {
@@ -103,12 +103,13 @@ export default function ProfileAndNotificationsPage() {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file.name);
-      setKycStatus('VERIFYING');
+      setKycStatus('PENDING');
 
-      // Simulate AI document OCR & KYC verification
-      setTimeout(() => {
-        setKycStatus('VERIFIED');
-      }, 2000);
+      // Actually submit the KYC document reference to the backend
+      authApi.getMe().then(res => {
+        const nic = res.data?.profile?.nic || '';
+        api.post('/api/users/kyc', { nic, kycDocument: file.name }).catch(() => {});
+      });
     }
   };
 
