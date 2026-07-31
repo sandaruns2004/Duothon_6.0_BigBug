@@ -59,11 +59,29 @@ const sendOtpEmail = async (email, otp) => {
     logger.info('📧 MFA OTP email dispatched successfully via RabbitMQ', { email });
     return true;
   } catch (err) {
-    logger.warn('Could not dispatch OTP email via RabbitMQ:', {
+    logger.warn('Could not dispatch OTP email via RabbitMQ, trying HTTP fallback for Azure:', {
       error: err.message,
       email
     });
-    return false;
+    try {
+      const NOTIF_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004';
+      await fetch(`${NOTIF_URL}/internal/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          title: 'AegisVault Security: Your Multi-Factor Login OTP',
+          message: `Your AegisVault secure login OTP is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
+          type: 'SECURITY',
+          channel: 'EMAIL'
+        })
+      });
+      logger.info('📧 MFA OTP email dispatched via HTTP fallback', { email });
+      return true;
+    } catch (httpErr) {
+      logger.error('Both RabbitMQ and HTTP fallback failed for OTP email:', { error: httpErr.message });
+      return false;
+    }
   }
 };
 

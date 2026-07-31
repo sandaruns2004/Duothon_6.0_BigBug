@@ -144,8 +144,7 @@ jobs:
           
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_HOST="${PG_FQDN:-postgres}"
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@${DB_HOST}:5432/aegisvault?sslmode=disable"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
           
           SMTP_HOST="${{ secrets.SMTP_HOST }}"
           if [ -z "$SMTP_HOST" ]; then SMTP_HOST="smtp.mailtrap.io"; fi
@@ -162,9 +161,8 @@ jobs:
           SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
           if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
 
-          REDIS_URL="redis://${REDIS_FQDN}:6379"
-          RABBITMQ_HOST="${RABBITMQ_FQDN:-rabbitmq}"
-          RABBITMQ_URL="amqp://guest:guest@${RABBITMQ_HOST}:5672"
+          REDIS_URL="redis://redis:6379"
+          RABBITMQ_URL="amqp://guest:guest@rabbitmq:5672"
 
           echo "🔐 Setting registry credentials sequentially to avoid conflicts..."
           APPS=("postgres" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
@@ -216,8 +214,7 @@ jobs:
         run: |
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_HOST="${PG_FQDN:-postgres}"
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@${DB_HOST}:5432/aegisvault?sslmode=disable"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
           
           echo "🌱 Creating Seed Job in Azure Container Apps..."
           

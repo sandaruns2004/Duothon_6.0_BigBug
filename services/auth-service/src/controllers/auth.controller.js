@@ -170,15 +170,19 @@ const login = async (req, res) => {
     }
 
     // Also persist OTP record in database for audit/fallback
-    const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
-    await prisma.otpRecord.create({
-      data: {
-        userId: user.id,
-        otpHash,
-        type: 'MFA_LOGIN',
-        expiresAt
-      }
-    });
+    try {
+      const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
+      await prisma.otpRecord.create({
+        data: {
+          userId: user.id,
+          otpHash,
+          type: 'MFA_LOGIN',
+          expiresAt
+        }
+      });
+    } catch (dbErr) {
+      logger.warn('Failed to persist OTP record in DB, relying on Redis cache:', { error: dbErr.message });
+    }
 
     // Send OTP via Notification Service
     await sendOtpEmail(user.email, otp);
@@ -305,16 +309,20 @@ const verifyOtp = async (req, res) => {
     });
 
     // Hash and persist refresh token in database
-    const tokenHash = hashOtp(refreshToken);
-    const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    try {
+      const tokenHash = hashOtp(refreshToken);
+      const refreshExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash,
-        expiresAt: refreshExpiresAt
-      }
-    });
+      await prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt: refreshExpiresAt
+        }
+      });
+    } catch (tokenErr) {
+      logger.warn('Failed to persist refresh token in DB:', { error: tokenErr.message });
+    }
 
     logger.info('🔓 MFA OTP verified successfully. Tokens issued:', { userId: user.id, role: user.role });
 
