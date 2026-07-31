@@ -43,11 +43,11 @@ export default function VerifyOtpPage() {
       const res = await authApi.verifyOtp({ email, userId, otp });
 
       if (res.data?.success && res.data?.accessToken) {
-        setTokens(res.data.accessToken, res.data.refreshToken, res.data.user?.role);
+        const role = (res.data.user?.role || res.data.role || 'CUSTOMER').toString().toUpperCase();
+        setTokens(res.data.accessToken, res.data.refreshToken, role);
         localStorage.removeItem('tempUserId');
         localStorage.removeItem('tempEmail');
 
-        const role = res.data.user?.role || 'CUSTOMER';
         if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
           router.push('/admin');
         } else {

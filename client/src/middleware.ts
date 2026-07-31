@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get('accessToken')?.value;
-  const userRole = request.cookies.get('userRole')?.value || 'CUSTOMER';
+  const userRole = (request.cookies.get('userRole')?.value || 'CUSTOMER').toUpperCase();
 
   // If no token and trying to access protected route, redirect to login
   if (!token) {

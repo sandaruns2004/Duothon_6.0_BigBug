@@ -29,8 +29,8 @@ export default function LoginPage() {
           localStorage.setItem('tempEmail', email);
           router.push('/verify-otp');
         } else if (res.data.accessToken) {
-          setTokens(res.data.accessToken, res.data.refreshToken, res.data.user?.role);
-          const role = res.data.user?.role || 'CUSTOMER';
+          const role = (res.data.user?.role || res.data.role || 'CUSTOMER').toString().toUpperCase();
+          setTokens(res.data.accessToken, res.data.refreshToken, role);
           if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
             router.push('/admin');
           } else {

@@ -53,25 +53,27 @@ const initDatabaseAndSeed = async () => {
       }
 
       const adminEmail = 'admin@aegisvault.com';
-      const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
-      if (!existingAdmin) {
-        logger.info('🌱 [Auth Service] Seeding demo admin...');
-        const passwordHash = await bcrypt.hash('AdminSecure2026!', 12);
-        await prisma.user.create({
-          data: {
-            id: 'usr-admin-demo-001',
-            email: adminEmail,
-            phone: '+1555010002',
-            nic: '199001010002',
-            passwordHash,
-            role: 'ADMIN',
-            kycStatus: 'VERIFIED',
-            failedAttempts: 0,
-            isLocked: false
-          }
-        });
-        logger.info('✅ [Auth Service] Demo admin seeded successfully.');
-      }
+      const adminPasswordHash = await bcrypt.hash('AdminSecure2026!', 12);
+      await prisma.user.upsert({
+        where: { email: adminEmail },
+        update: {
+          role: 'ADMIN',
+          kycStatus: 'VERIFIED',
+          isLocked: false
+        },
+        create: {
+          id: 'usr-admin-demo-001',
+          email: adminEmail,
+          phone: '+1555010002',
+          nic: '199001010002',
+          passwordHash: adminPasswordHash,
+          role: 'ADMIN',
+          kycStatus: 'VERIFIED',
+          failedAttempts: 0,
+          isLocked: false
+        }
+      });
+      logger.info('✅ [Auth Service] Demo admin seeded/updated successfully.');
     }
   } catch (err) {
     logger.error('❌ [Auth Service] Database initialization FAILED:', {

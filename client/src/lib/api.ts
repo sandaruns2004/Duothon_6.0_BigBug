@@ -22,25 +22,27 @@ export const api: AxiosInstance = axios.create({
 // Helper for saving tokens
 export const setTokens = (accessToken: string, refreshToken?: string, role?: string) => {
   if (typeof window !== 'undefined') {
-    Cookies.set('accessToken', accessToken, { expires: 1 / 96 }); // 15m
+    Cookies.set('accessToken', accessToken, { expires: 1 / 96, path: '/' }); // 15m
     localStorage.setItem('accessToken', accessToken);
     if (refreshToken) {
-      Cookies.set('refreshToken', refreshToken, { expires: 7 }); // 7d
+      Cookies.set('refreshToken', refreshToken, { expires: 7, path: '/' }); // 7d
       localStorage.setItem('refreshToken', refreshToken);
     }
     if (role) {
-      Cookies.set('userRole', role, { expires: 7 });
+      Cookies.set('userRole', role, { expires: 7, path: '/' });
       localStorage.setItem('userRole', role);
     }
+    // Clear previously saved account selection from previous session to avoid hardcoded/stale account number bug
+    localStorage.removeItem('aegisvault_selected_account_number');
   }
 };
 
 // Helper for clearing tokens
 export const clearTokens = () => {
   if (typeof window !== 'undefined') {
-    Cookies.remove('accessToken');
-    Cookies.remove('refreshToken');
-    Cookies.remove('userRole');
+    Cookies.remove('accessToken', { path: '/' });
+    Cookies.remove('refreshToken', { path: '/' });
+    Cookies.remove('userRole', { path: '/' });
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userRole');

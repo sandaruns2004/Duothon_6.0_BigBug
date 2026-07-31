@@ -88,7 +88,7 @@ export default function AdminDashboardPage() {
 
   // Role-based redirect guard: Non-admins should not access /admin
   useEffect(() => {
-    const role = Cookies.get('userRole') || localStorage.getItem('userRole');
+    const role = (Cookies.get('userRole') || localStorage.getItem('userRole') || '').toUpperCase();
     if (role && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
       router.replace('/dashboard');
     }

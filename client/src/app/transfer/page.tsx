@@ -45,19 +45,15 @@ export default function TransferPage() {
           const matched = saved ? res.data.accounts.find((a: Account) => a.accountNumber === saved) : null;
           const chosen = matched || res.data.accounts[0];
           setFromAccount(chosen.accountNumber);
+        } else {
+          setAccounts([]);
+          setFromAccount('');
         }
       })
       .catch(() => {
-        const demoAcc: Account = {
-          id: 'acc-demo-1',
-          accountNumber: '810000000001',
-          accountType: 'SAVINGS',
-          balance: 1500000,
-          currency: 'LKR',
-          status: 'ACTIVE'
-        };
-        setAccounts([demoAcc]);
-        setFromAccount(demoAcc.accountNumber);
+        setAccounts([]);
+        setFromAccount('');
+        setError('Failed to load accounts. Please ensure you are logged in.');
       });
   }, []);
 

@@ -73,49 +73,19 @@ export default function DashboardPage() {
         const chosen = matched || accRes.data.accounts[0];
         setSelectedAcc(chosen);
       } else {
-        // Fallback demo account for smooth initial evaluation
-        const demoAcc: Account = {
-          id: 'acc-demo-001',
-          accountNumber: '810000000001',
-          accountType: 'SAVINGS',
-          balance: '1500000.00',
-          currency: 'LKR',
-          status: 'ACTIVE'
-        };
-        setAccounts([demoAcc]);
-        setSelectedAcc(demoAcc);
+        setAccounts([]);
+        setSelectedAcc(null);
       }
 
       if (txnRes?.data?.success && Array.isArray(txnRes.data.transactions)) {
         setTransactions(txnRes.data.transactions);
       } else {
-        // Fallback demo transactions
-        setTransactions([
-          {
-            id: 'txn-demo-1',
-            referenceNumber: 'TXN-2026-9871',
-            amount: '25000.00',
-            type: 'TRANSFER',
-            status: 'SUCCESS',
-            fromAccountId: '810000000001',
-            toAccountId: '810087654321',
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            description: 'Rent transfer'
-          },
-          {
-            id: 'txn-demo-2',
-            referenceNumber: 'TXN-2026-9872',
-            amount: '600000.00',
-            type: 'TRANSFER',
-            status: 'SUCCESS',
-            fromAccountId: '810000000001',
-            toAccountId: '990011223344',
-            fraudFlag: true,
-            createdAt: new Date(Date.now() - 7200000).toISOString(),
-            description: 'High-value wire (Flagged by Rule 1)'
-          }
-        ]);
+        setTransactions([]);
       }
+    } catch {
+      setAccounts([]);
+      setSelectedAcc(null);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }

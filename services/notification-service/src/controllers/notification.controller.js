@@ -55,7 +55,7 @@ const internalNotify = async (req, res) => {
         title: notifTitle,
         message: notifMessage,
         type,
-        channel: channel.toUpperCase() === 'PUSH' ? 'PUSH' : 'EMAIL',
+        channel: (channel && String(channel).toUpperCase() === 'PUSH') ? 'PUSH' : 'EMAIL',
         isRead: false
       }
     });

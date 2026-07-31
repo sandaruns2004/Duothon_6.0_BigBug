@@ -53,10 +53,12 @@ export default function TransactionsPage() {
           const matched = saved ? res.data.accounts.find((a: any) => a.accountNumber === saved) : null;
           const chosen = matched || res.data.accounts[0];
           setMyAccountNumber(chosen.accountNumber);
+        } else {
+          setMyAccountNumber('');
         }
       })
       .catch(() => {
-        setMyAccountNumber('810000000001');
+        setMyAccountNumber('');
       });
   }, []);
 
@@ -67,91 +69,10 @@ export default function TransactionsPage() {
       if (res.data?.success && Array.isArray(res.data.transactions) && res.data.transactions.length > 0) {
         setTransactions(res.data.transactions);
       } else {
-        // Fallback demo transactions
-        setTransactions([
-          {
-            id: 'txn-101',
-            referenceNumber: 'TXN-2026-8801',
-            amount: '25000.00',
-            type: 'TRANSFER',
-            status: 'SUCCESS',
-            fromAccountId: myAccountNumber,
-            toAccountId: '810087654321',
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            description: 'Monthly office rental'
-          },
-          {
-            id: 'txn-102',
-            referenceNumber: 'TXN-2026-8802',
-            amount: '125000.00',
-            type: 'TRANSFER',
-            status: 'SUCCESS',
-            fromAccountId: '810099887766',
-            toAccountId: myAccountNumber,
-            createdAt: new Date(Date.now() - 14400000).toISOString(),
-            description: 'Freelance invoice settlement'
-          },
-          {
-            id: 'txn-103',
-            referenceNumber: 'TXN-2026-8803',
-            amount: '600000.00',
-            type: 'TRANSFER',
-            status: 'SUCCESS',
-            fromAccountId: myAccountNumber,
-            toAccountId: '990011223344',
-            fraudFlag: true,
-            createdAt: new Date(Date.now() - 28800000).toISOString(),
-            description: 'International wire (Rule 1 Velocity Alert)'
-          },
-          {
-            id: 'txn-104',
-            referenceNumber: 'TXN-2026-8804',
-            amount: '4500.00',
-            type: 'PAYMENT',
-            status: 'SUCCESS',
-            fromAccountId: myAccountNumber,
-            toAccountId: 'CEB-BILLER',
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            description: 'CEB Utility / Reload Payment (Ref: 1089234561)'
-          },
-          {
-            id: 'txn-105',
-            referenceNumber: 'TXN-2026-8805',
-            amount: '1500.00',
-            type: 'PAYMENT',
-            status: 'SUCCESS',
-            fromAccountId: myAccountNumber,
-            toAccountId: 'DIALOG-BILLER',
-            createdAt: new Date(Date.now() - 172800000).toISOString(),
-            description: 'DIALOG Utility / Reload Payment (Ref: 0771234567)'
-          },
-          {
-            id: 'txn-106',
-            referenceNumber: 'LOAN-DISB-9901',
-            amount: '500000.00',
-            type: 'DEPOSIT',
-            status: 'SUCCESS',
-            fromAccountId: 'AEGISVAULT-FINANCE',
-            toAccountId: myAccountNumber,
-            createdAt: new Date(Date.now() - 259200000).toISOString(),
-            description: 'Loan Disbursement - Personal Financing (Loan #LOAN-9901)'
-          },
-          {
-            id: 'txn-107',
-            referenceNumber: 'EMI-48092',
-            amount: '25000.00',
-            type: 'PAYMENT',
-            status: 'SUCCESS',
-            fromAccountId: myAccountNumber,
-            toAccountId: 'AEGISVAULT-FINANCE',
-            createdAt: new Date(Date.now() - 345600000).toISOString(),
-            description: 'Loan EMI Deduction - Installment Cut for Loan #LOAN-9901'
-          }
-        ]);
-
+        setTransactions([]);
       }
     } catch {
-      // Offline mock data handled
+      setTransactions([]);
     } finally {
       setLoading(false);
     }

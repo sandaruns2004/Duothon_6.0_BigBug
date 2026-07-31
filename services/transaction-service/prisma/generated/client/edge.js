@@ -163,7 +163,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\sithu\\MyWorks\\My Softwares\\Competitions\\Duothon_26_devops\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\generated\\client",
+      "value": "C:\\Users\\ADMIN\\Desktop\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\generated\\client",
       "fromEnvVar": null
     },
     "config": {
@@ -183,12 +183,11 @@ const config = {
     "previewFeatures": [
       "multiSchema"
     ],
-    "sourceFilePath": "C:\\Users\\sithu\\MyWorks\\My Softwares\\Competitions\\Duothon_26_devops\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\ADMIN\\Desktop\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../..",
   "clientVersion": "5.22.0",

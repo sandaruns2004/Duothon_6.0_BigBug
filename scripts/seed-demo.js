@@ -84,7 +84,7 @@ const runSeed = async () => {
     const adminPasswordHash = await hashPassword('AdminSecure2026!');
     const adminUser = await authPrisma.user.upsert({
       where: { email: 'admin@aegisvault.com' },
-      update: {},
+      update: { role: 'ADMIN', kycStatus: 'VERIFIED', isLocked: false },
       create: {
         id: 'usr-admin-demo-001',
         email: 'admin@aegisvault.com',
@@ -307,6 +307,71 @@ const runSeed = async () => {
       },
     });
     console.log(`  ✅ SHA-256 Audit Chain initialized (Genesis Hash: ${genesisHash.substring(0, 12)}...)`);
+
+    // 5. Prepopulate User Security & Transaction Notifications
+    console.log('🔔 [5/5] Prepopulating Notifications for Customers & Admin...');
+    const now = new Date();
+    const demoNotifs = [
+      {
+        id: 'notif-demo-001',
+        userId: cust1.id,
+        title: 'Quantum Verification Success',
+        message: 'Your KYC verification status has been verified to Quantum Verified status.',
+        type: 'SECURITY_ALERT',
+        channel: 'EMAIL',
+        isRead: false,
+        createdAt: new Date(now.getTime() - 86400000)
+      },
+      {
+        id: 'notif-demo-002',
+        userId: cust1.id,
+        title: 'High-Value Transfer Flagged',
+        message: 'Transfer TXN-2026-8803 of 600,000.00 LKR triggered Rule 1 Velocity Alert.',
+        type: 'FRAUD_ALERT',
+        channel: 'EMAIL',
+        isRead: false,
+        createdAt: new Date(now.getTime() - 28800000)
+      },
+      {
+        id: 'notif-demo-003',
+        userId: cust1.id,
+        title: 'Loan Disbursement Successful',
+        message: 'Loan LOAN-9901 of 500,000.00 LKR was credited to your savings account.',
+        type: 'TRANSACTION_ALERT',
+        channel: 'EMAIL',
+        isRead: true,
+        createdAt: new Date(now.getTime() - 259200000)
+      },
+      {
+        id: 'notif-demo-004',
+        userId: cust2.id,
+        title: 'Welcome to AegisVault',
+        message: 'Your account 810000000002 is active and ready for Quantum Banking.',
+        type: 'SYSTEM_ALERT',
+        channel: 'EMAIL',
+        isRead: false,
+        createdAt: new Date(now.getTime() - 172800000)
+      },
+      {
+        id: 'notif-demo-005',
+        userId: adminUser.id,
+        title: 'System Genesis Initialized',
+        message: 'AegisVault demo database has been synchronized and seeded successfully.',
+        type: 'SYSTEM_ALERT',
+        channel: 'EMAIL',
+        isRead: false,
+        createdAt: new Date(now.getTime() - 3600000)
+      }
+    ];
+
+    for (const notif of demoNotifs) {
+      await notifPrisma.notification.upsert({
+        where: { id: notif.id },
+        update: { userId: notif.userId, title: notif.title, message: notif.message, isRead: notif.isRead },
+        create: notif
+      });
+    }
+    console.log(`  ✅ Prepopulated 5 notifications for Customer 1, Customer 2, and Admin`);
 
     console.log('\n🎉 [SUCCESS] Demo Environment Prepopulation Completed Successfully!');
     console.log('───────────────────────────────────────────────────────────────────');

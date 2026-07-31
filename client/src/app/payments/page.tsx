@@ -116,9 +116,14 @@ export default function PaymentsAndLoansPage() {
       return;
     }
 
+    if (!userAccountNumber) {
+      setBillError('No active account selected for bill payment. Please select an account first.');
+      return;
+    }
+
     setBillLoading(true);
     try {
-      const targetAcc = userAccountNumber || '810000000001';
+      const targetAcc = userAccountNumber;
       const res = await accountApi.payBill({
         accountId: targetAcc,
         accountNumber: targetAcc,
