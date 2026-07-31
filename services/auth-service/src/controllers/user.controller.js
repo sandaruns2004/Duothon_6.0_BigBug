@@ -1,5 +1,6 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
+const { sendAuthNotification } = require('../utils/notifier');
 
 // ═══════════════════════════════════════════════════════════════════
 // User Profile & KYC Verification Controller
@@ -177,6 +178,14 @@ const uploadKyc = async (req, res) => {
     });
 
     logger.info('✅ KYC Verification submitted for user:', { userId, nic, status: 'PENDING' });
+
+    sendAuthNotification({
+      userId: updatedUser.id,
+      title: '📄 KYC Submitted successfully!',
+      message: 'KYC document submitted successfully! Awaiting admin review. File saved in Azure Blob Storage.',
+      type: 'SECURITY',
+      email: updatedUser.email
+    });
 
     return res.status(200).json({
       success: true,

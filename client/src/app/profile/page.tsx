@@ -101,6 +101,7 @@ export default function ProfileAndNotificationsPage() {
         setUploadedFile(file.name);
         setKycStatus('PENDING');
         setKycSuccess('KYC document submitted successfully! Awaiting admin review.');
+        window.dispatchEvent(new Event('notification-updated'));
         if (res.data.profile) {
           setProfile(res.data.profile);
           if (res.data.profile.nic) setNicInput(res.data.profile.nic);

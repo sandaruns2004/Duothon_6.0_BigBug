@@ -557,6 +557,13 @@ const approveLoan = async (req, res) => {
 
     logger.info('✅ Loan approved and credited to account:', { loanId: id, accountId: loan.accountId, amount: Number(loan.amount) });
 
+    sendAccountNotification({
+      userId: loan.userId,
+      title: `✅ Loan Approved: LKR ${Number(loan.amount).toLocaleString()}`,
+      message: `Your loan for ${Number(loan.amount).toLocaleString()} LKR has been approved by Admin and credited to your account.`,
+      type: 'TRANSACTION'
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Loan approved successfully and funds credited to account.',

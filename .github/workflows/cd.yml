@@ -115,6 +115,7 @@ jobs:
           echo "🌐 Fetching Internal Service URLs..."
           PG_FQDN=$(az containerapp show -n postgres -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')
           REDIS_FQDN=$(az containerapp show -n redis -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')
+          RABBITMQ_FQDN=$(az containerapp show -n rabbitmq -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')
           AUTH_URL="https://$(az containerapp show -n auth-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           ACCT_URL="https://$(az containerapp show -n account-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           TX_URL="https://$(az containerapp show -n transaction-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
@@ -124,6 +125,7 @@ jobs:
           
           echo "PG_FQDN=$PG_FQDN" >> $GITHUB_ENV
           echo "REDIS_FQDN=$REDIS_FQDN" >> $GITHUB_ENV
+          echo "RABBITMQ_FQDN=$RABBITMQ_FQDN" >> $GITHUB_ENV
           echo "AUTH_URL=$AUTH_URL" >> $GITHUB_ENV
           echo "ACCT_URL=$ACCT_URL" >> $GITHUB_ENV
           echo "TX_URL=$TX_URL" >> $GITHUB_ENV
@@ -142,7 +144,8 @@ jobs:
           
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
+          DB_HOST="${PG_FQDN:-postgres}"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@${DB_HOST}:5432/aegisvault?sslmode=disable"
           
           SMTP_HOST="${{ secrets.SMTP_HOST }}"
           if [ -z "$SMTP_HOST" ]; then SMTP_HOST="smtp.mailtrap.io"; fi
@@ -159,8 +162,9 @@ jobs:
           SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
           if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
 
-          REDIS_URL="redis://${{ env.REDIS_FQDN }}:6379"
-          RABBITMQ_URL="amqp://guest:guest@rabbitmq:5672"
+          REDIS_URL="redis://${REDIS_FQDN}:6379"
+          RABBITMQ_HOST="${RABBITMQ_FQDN:-rabbitmq}"
+          RABBITMQ_URL="amqp://guest:guest@${RABBITMQ_HOST}:5672"
 
           echo "🔐 Setting registry credentials sequentially to avoid conflicts..."
           APPS=("postgres" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
@@ -181,7 +185,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"account-service"* ]]; then
-            az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=acct_db" &
+            az containerapp update --name account-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/account-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=acct_db" NOTIFICATION_SERVICE_URL="$NOTIF_URL" RABBITMQ_URL="$RABBITMQ_URL" &
           fi
           
           if [[ "$MODIFIED" == *"transaction-service"* ]]; then
@@ -193,7 +197,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"admin-service"* ]]; then
-            az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=admin_db" AUTH_SERVICE_URL="$AUTH_URL" TRANSACTION_SERVICE_URL="$TX_URL" &
+            az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=admin_db" AUTH_SERVICE_URL="$AUTH_URL" TRANSACTION_SERVICE_URL="$TX_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" RABBITMQ_URL="$RABBITMQ_URL" &
           fi
           
           if [[ "$MODIFIED" == *"api-gateway"* ]]; then
@@ -212,7 +216,8 @@ jobs:
         run: |
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
+          DB_HOST="${PG_FQDN:-postgres}"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@${DB_HOST}:5432/aegisvault?sslmode=disable"
           
           echo "🌱 Creating Seed Job in Azure Container Apps..."
           

@@ -254,6 +254,7 @@ export default function AdminDashboardPage() {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, isLocked: true } : u))
       );
+      window.dispatchEvent(new Event('notification-updated'));
     } catch {
       // offline fallback
       setUsers((prev) =>
@@ -268,6 +269,7 @@ export default function AdminDashboardPage() {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, isLocked: false } : u))
       );
+      window.dispatchEvent(new Event('notification-updated'));
     } catch {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, isLocked: false } : u))
@@ -281,6 +283,7 @@ export default function AdminDashboardPage() {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, kycStatus: 'VERIFIED' } : u))
       );
+      window.dispatchEvent(new Event('notification-updated'));
     } catch {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, kycStatus: 'VERIFIED' } : u))

@@ -13,23 +13,42 @@ const dispatchAsyncNotifications = async ({ transaction, fraudEvaluation, userEm
   setImmediate(async () => {
     try {
       // 1. Dispatch notification command (direct exchange)
-      await rabbitmq.publishCommand('notify.send', {
-        userId: transaction.userId,
-        to: userEmail || 'customer@aegisvault.com',
-        type: transaction.fraudFlag ? 'FRAUD_ALERT' : 'TRANSACTION_ALERT',
-        title: transaction.fraudFlag 
-          ? `🚨 Fraud Velocity Alert: LKR ${Number(transaction.amount).toLocaleString()}` 
-          : `⚡ Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
-        message: `Transfer of LKR ${Number(transaction.amount).toLocaleString()} (${transaction.status}) - Ref: ${transaction.referenceNumber}`,
-        subject: `Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
-        transactionId: transaction.id,
-        referenceNumber: transaction.referenceNumber,
-        amount: Number(transaction.amount),
-        currency: transaction.currency,
-        status: transaction.status,
-        fraudFlag: transaction.fraudFlag,
-        timestamp: transaction.createdAt
-      });
+      try {
+        await rabbitmq.publishCommand('notify.send', {
+          userId: transaction.userId,
+          to: userEmail || 'customer@aegisvault.com',
+          type: transaction.fraudFlag ? 'FRAUD_ALERT' : 'TRANSACTION_ALERT',
+          title: transaction.fraudFlag 
+            ? `🚨 Fraud Velocity Alert: LKR ${Number(transaction.amount).toLocaleString()}` 
+            : `⚡ Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
+          message: `Transfer of LKR ${Number(transaction.amount).toLocaleString()} (${transaction.status}) - Ref: ${transaction.referenceNumber}`,
+          subject: `Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
+          transactionId: transaction.id,
+          referenceNumber: transaction.referenceNumber,
+          amount: Number(transaction.amount),
+          currency: transaction.currency,
+          status: transaction.status,
+          fraudFlag: transaction.fraudFlag,
+          timestamp: transaction.createdAt
+        });
+      } catch (amqpErr) {
+        logger.warn('RabbitMQ publish failed, using HTTP /internal/notify fallback on Azure:', { error: amqpErr.message });
+        const NOTIF_URL = process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004';
+        await fetch(`${NOTIF_URL}/internal/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: transaction.userId ? String(transaction.userId) : null,
+            to: userEmail || 'customer@aegisvault.com',
+            title: transaction.fraudFlag 
+              ? `🚨 Fraud Velocity Alert: LKR ${Number(transaction.amount).toLocaleString()}` 
+              : `⚡ Transaction Alert: LKR ${Number(transaction.amount).toLocaleString()}`,
+            message: `Transfer of LKR ${Number(transaction.amount).toLocaleString()} (${transaction.status}) - Ref: ${transaction.referenceNumber}`,
+            type: transaction.fraudFlag ? 'FRAUD_ALERT' : 'TRANSACTION_ALERT',
+            channel: 'EMAIL'
+          })
+        });
+      }
 
       // 2. Dispatch audit log event (topic exchange)
       await rabbitmq.publishEvent('audit.log', {

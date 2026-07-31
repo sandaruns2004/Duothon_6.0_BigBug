@@ -1,5 +1,6 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
+const { sendAdminNotification } = require('../utils/notifier');
 
 // ═══════════════════════════════════════════════════════════════════
 // Admin Controller (Dashboard Aggregation, User Governance, KYC Verification)
@@ -254,6 +255,14 @@ const verifyUserKyc = async (req, res) => {
     });
 
     logger.info('✅ User KYC verified by admin:', { adminId, targetUserId: id });
+
+    sendAdminNotification({
+      userId: id,
+      title: '🛡️ KYC Status Verified',
+      message: 'Your identity verification document has been approved by an Administrative Officer. Your account is now fully verified.',
+      type: 'SECURITY',
+      email: updatedUser.email
+    });
 
     return res.status(200).json({
       success: true,
