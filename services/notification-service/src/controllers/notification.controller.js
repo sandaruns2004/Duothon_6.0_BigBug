@@ -1,6 +1,6 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
-const { sendHtmlEmail, buildTransactionAlertHtml } = require('../utils/mailer');
+const { sendHtmlEmail, buildTransactionAlertHtml, buildOtpEmailHtml } = require('../utils/mailer');
 
 // ═══════════════════════════════════════════════════════════════════
 // Notification Controller (User Alerts, Read State, Internal Email & Notify)
@@ -112,7 +112,7 @@ const internalNotify = async (req, res) => {
  */
 const internalEmail = async (req, res) => {
   try {
-    const { to, subject, text, html } = req.body;
+    const { to, subject, text, html, template, otp } = req.body;
 
     if (!to || !subject) {
       return res.status(400).json({
@@ -121,12 +121,25 @@ const internalEmail = async (req, res) => {
       });
     }
 
+    let htmlContent = html;
+    if (template === 'OTP_LOGIN' && otp) {
+      htmlContent = buildOtpEmailHtml(otp, subject);
+    }
+
     const emailResult = await sendHtmlEmail({
       to,
       subject,
       text,
-      html
+      html: htmlContent
     });
+
+    if (!emailResult.success) {
+      logger.error('📧 Direct internal email failed to dispatch:', { to, subject });
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to deliver email.'
+      });
+    }
 
     logger.info('📧 Direct internal email sent:', {
       to,

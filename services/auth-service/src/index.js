@@ -8,6 +8,7 @@ const { PrismaClient } = require('../prisma/generated/client');
 const { logger, requestLogger } = require('./config/logger');
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
+const rabbitmq = require('./utils/rabbitmq');
 
 const prisma = new PrismaClient();
 
@@ -152,7 +153,12 @@ app.use((err, req, res, next) => {
 
 // Start Auth Service Server
 if (require.main === module) {
-  initDatabaseAndSeed().finally(() => {
+  initDatabaseAndSeed().finally(async () => {
+    try {
+      await rabbitmq.connect();
+    } catch (err) {
+      logger.error('Failed to connect to RabbitMQ on startup', { error: err.message });
+    }
     app.listen(PORT, () => {
       logger.info(`🔐 AegisVault Auth Service running on port ${PORT}`);
     });

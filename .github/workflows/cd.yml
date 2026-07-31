@@ -121,6 +121,7 @@ jobs:
           NOTIF_URL="https://$(az containerapp show -n notification-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           ADMIN_URL="https://$(az containerapp show -n admin-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           API_GW_URL="https://$(az containerapp show -n api-gateway -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          RABBIT_FQDN=$(az containerapp show -n rabbitmq -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')
           
           echo "PG_FQDN=$PG_FQDN" >> $GITHUB_ENV
           echo "REDIS_FQDN=$REDIS_FQDN" >> $GITHUB_ENV
@@ -130,6 +131,9 @@ jobs:
           echo "NOTIF_URL=$NOTIF_URL" >> $GITHUB_ENV
           echo "ADMIN_URL=$ADMIN_URL" >> $GITHUB_ENV
           echo "API_GW_URL=$API_GW_URL" >> $GITHUB_ENV
+          echo "RABBIT_FQDN=$RABBIT_FQDN" >> $GITHUB_ENV
+          
+          echo "Internal service URLs fetched successfully."
 
       - name: Parallel Deployments
         env:
@@ -157,8 +161,8 @@ jobs:
           SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
           if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
 
-          REDIS_URL="redis://redis:6379"
-          RABBITMQ_URL="amqp://guest:guest@rabbitmq:5672"
+          REDIS_URL="redis://${{ env.REDIS_FQDN }}:6379"
+          RABBITMQ_URL="amqp://guest:guest@${{ env.RABBIT_FQDN }}:5672"
 
           echo "🔐 Setting registry credentials sequentially to avoid conflicts..."
           APPS=("postgres" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
