@@ -44,6 +44,7 @@ const sendHtmlEmail = async ({ to, subject, html, text }) => {
     logger.info('📧 [DEV / SANDBOX EMAIL DISPATCH] Simulating email delivery instantly (mock mode):', {
       to,
       subject,
+      bodyPreview: (text || html || '').substring(0, 150), // Include a preview so the developer can see the OTP!
       simulated: true
     });
     return {
@@ -66,7 +67,8 @@ const sendHtmlEmail = async ({ to, subject, html, text }) => {
     logger.warn('SMTP Transport unreachable (fallback to mock email delivery log):', {
       error: err.message,
       to,
-      subject
+      subject,
+      bodyPreview: (text || html || '').substring(0, 150)
     });
     // Return success: true in sandbox/offline mode so user registration/login/transfer flows are never blocked
     return {

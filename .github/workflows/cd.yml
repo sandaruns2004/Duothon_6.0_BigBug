@@ -142,6 +142,12 @@ jobs:
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
           DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
           
+          SMTP_HOST="${{ secrets.SMTP_HOST }}"
+          if [ -z "$SMTP_HOST" ]; then SMTP_HOST="smtp.mailtrap.io"; fi
+
+          SMTP_PORT="${{ secrets.SMTP_PORT }}"
+          if [ -z "$SMTP_PORT" ]; then SMTP_PORT="2525"; fi
+
           SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}"
           if [ -z "$SMTP_USERNAME" ]; then SMTP_USERNAME="user"; fi
           
@@ -178,7 +184,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"notification-service"* ]]; then
-            az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=notif_db" SMTP_HOST="smtp.mailtrap.io" SMTP_PORT="2525" SMTP_USER="$SMTP_USERNAME" SMTP_PASS="$SMTP_PASSWORD" SMTP_FROM="noreply@aegisvault.com" RABBITMQ_URL="$RABBITMQ_URL" &
+            az containerapp update --name notification-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/notification-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=notif_db" SMTP_HOST="$SMTP_HOST" SMTP_PORT="$SMTP_PORT" SMTP_USER="$SMTP_USERNAME" SMTP_PASS="$SMTP_PASSWORD" SMTP_FROM="noreply@aegisvault.com" RABBITMQ_URL="$RABBITMQ_URL" &
           fi
           
           if [[ "$MODIFIED" == *"admin-service"* ]]; then

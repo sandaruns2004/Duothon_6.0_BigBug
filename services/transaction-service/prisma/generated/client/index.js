@@ -164,7 +164,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\ADMIN\\Desktop\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\generated\\client",
+      "value": "C:\\Users\\sithu\\MyWorks\\My Softwares\\Competitions\\Duothon_26_devops\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\generated\\client",
       "fromEnvVar": null
     },
     "config": {
@@ -178,21 +178,18 @@ const config = {
       },
       {
         "fromEnvVar": null,
-        "value": "debian-openssl-3.0.x"
-      },
-      {
-        "fromEnvVar": null,
         "value": "linux-musl-openssl-3.0.x"
       }
     ],
     "previewFeatures": [
       "multiSchema"
     ],
-    "sourceFilePath": "C:\\Users\\ADMIN\\Desktop\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\sithu\\MyWorks\\My Softwares\\Competitions\\Duothon_26_devops\\Duothon_6.0_BigBug\\services\\transaction-service\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null
+    "rootEnvPath": null,
+    "schemaEnvPath": "../../../../../.env"
   },
   "relativePath": "../..",
   "clientVersion": "5.22.0",
@@ -209,8 +206,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"txn_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  binaryTargets   = [\"native\", \"debian-openssl-3.0.x\", \"linux-musl-openssl-3.0.x\"]\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum TransactionType {\n  TRANSFER\n  PAYMENT\n  DEPOSIT\n\n  @@schema(\"txn_db\")\n}\n\nenum TransactionStatus {\n  PENDING\n  SUCCESS\n  FAILED\n  FLAGGED\n\n  @@schema(\"txn_db\")\n}\n\nenum FraudAlertStatus {\n  FLAGGED\n  REVIEWED\n  CLEARED\n\n  @@schema(\"txn_db\")\n}\n\nmodel Transaction {\n  id              String            @id @default(uuid())\n  userId          String?           @map(\"user_id\")\n  fromAccountId   String            @map(\"from_account_id\")\n  toAccountId     String            @map(\"to_account_id\")\n  amount          Decimal           @db.Decimal(15, 2)\n  currency        String            @default(\"LKR\")\n  type            TransactionType   @default(TRANSFER)\n  status          TransactionStatus @default(PENDING)\n  referenceNumber String            @unique @map(\"reference_number\")\n  fraudFlag       Boolean           @default(false) @map(\"fraud_flag\")\n  description     String?\n  createdAt       DateTime          @default(now()) @map(\"created_at\")\n  updatedAt       DateTime          @updatedAt @map(\"updated_at\")\n\n  fraudAlerts FraudAlert[]\n\n  @@index([fromAccountId])\n  @@index([toAccountId])\n  @@index([createdAt])\n  @@map(\"transactions\")\n  @@schema(\"txn_db\")\n}\n\nmodel FraudAlert {\n  id            String           @id @default(uuid())\n  transactionId String           @map(\"transaction_id\")\n  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)\n  ruleTriggered String           @map(\"rule_triggered\")\n  riskScore     Int              @default(0) @map(\"risk_score\")\n  status        FraudAlertStatus @default(FLAGGED)\n  createdAt     DateTime         @default(now()) @map(\"created_at\")\n\n  @@index([transactionId])\n  @@map(\"fraud_alerts\")\n  @@schema(\"txn_db\")\n}\n",
-  "inlineSchemaHash": "23788de4bb3e1b6f871d3985039f9d909bd704040acb4a74e28180d60dd88816",
+  "inlineSchema": "datasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n  schemas  = [\"txn_db\"]\n}\n\ngenerator client {\n  provider        = \"prisma-client-js\"\n  output          = \"./generated/client\"\n  binaryTargets   = [\"native\", \"linux-musl-openssl-3.0.x\"]\n  previewFeatures = [\"multiSchema\"]\n}\n\nenum TransactionType {\n  TRANSFER\n  PAYMENT\n  DEPOSIT\n\n  @@schema(\"txn_db\")\n}\n\nenum TransactionStatus {\n  PENDING\n  SUCCESS\n  FAILED\n  FLAGGED\n\n  @@schema(\"txn_db\")\n}\n\nenum FraudAlertStatus {\n  FLAGGED\n  REVIEWED\n  CLEARED\n\n  @@schema(\"txn_db\")\n}\n\nmodel Transaction {\n  id              String            @id @default(uuid())\n  userId          String?           @map(\"user_id\")\n  fromAccountId   String            @map(\"from_account_id\")\n  toAccountId     String            @map(\"to_account_id\")\n  amount          Decimal           @db.Decimal(15, 2)\n  currency        String            @default(\"LKR\")\n  type            TransactionType   @default(TRANSFER)\n  status          TransactionStatus @default(PENDING)\n  referenceNumber String            @unique @map(\"reference_number\")\n  fraudFlag       Boolean           @default(false) @map(\"fraud_flag\")\n  description     String?\n  createdAt       DateTime          @default(now()) @map(\"created_at\")\n  updatedAt       DateTime          @updatedAt @map(\"updated_at\")\n\n  fraudAlerts FraudAlert[]\n\n  @@index([fromAccountId])\n  @@index([toAccountId])\n  @@index([createdAt])\n  @@map(\"transactions\")\n  @@schema(\"txn_db\")\n}\n\nmodel FraudAlert {\n  id            String           @id @default(uuid())\n  transactionId String           @map(\"transaction_id\")\n  transaction   Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)\n  ruleTriggered String           @map(\"rule_triggered\")\n  riskScore     Int              @default(0) @map(\"risk_score\")\n  status        FraudAlertStatus @default(FLAGGED)\n  createdAt     DateTime         @default(now()) @map(\"created_at\")\n\n  @@index([transactionId])\n  @@map(\"fraud_alerts\")\n  @@schema(\"txn_db\")\n}\n",
+  "inlineSchemaHash": "bd803e7bc5abb94d78e2d66ac3c7a29d13a68884135ea3674fe67ad206196eff",
   "copyEngine": true
 }
 
@@ -250,10 +247,6 @@ Object.assign(exports, Prisma)
 // file annotations for bundling tools to include these files
 path.join(__dirname, "query_engine-windows.dll.node");
 path.join(process.cwd(), "services/transaction-service/prisma/generated/client/query_engine-windows.dll.node")
-
-// file annotations for bundling tools to include these files
-path.join(__dirname, "libquery_engine-debian-openssl-3.0.x.so.node");
-path.join(process.cwd(), "services/transaction-service/prisma/generated/client/libquery_engine-debian-openssl-3.0.x.so.node")
 
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-linux-musl-openssl-3.0.x.so.node");
