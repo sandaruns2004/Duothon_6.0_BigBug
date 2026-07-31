@@ -79,9 +79,26 @@ interface AuditLogItem {
   createdAt: string;
 }
 
+interface TransactionItem {
+  id: string;
+  referenceNumber: string;
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number | string;
+  type: string;
+  status: string;
+  createdAt: string;
+}
+
+interface DailyReportItem {
+  date: string;
+  volume: number;
+  txns: number;
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'users' | 'fraud' | 'audit' | 'loans'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'fraud' | 'audit' | 'loans' | 'transactions'>('users');
   const [loading, setLoading] = useState(true);
   const [loans, setLoans] = useState<LoanItem[]>([]);
   const [selectedKycUser, setSelectedKycUser] = useState<UserItem | null>(null);
@@ -96,40 +113,36 @@ export default function AdminDashboardPage() {
 
   // Dashboard Aggregation Stats
   const [stats, setStats] = useState({
-    totalUsers: 142,
-    activeAccounts: 189,
-    totalTransactionsToday: 384,
-    flaggedTransactionsCount: 3,
-    uptimeFormatted: '18h 42m 15s'
+    totalUsers: 0,
+    activeAccounts: 0,
+    totalTransactionsToday: 0,
+    flaggedTransactionsCount: 0,
+    uptimeFormatted: '0h 0m 0s'
   });
 
   // Data states
   const [users, setUsers] = useState<UserItem[]>([]);
   const [fraudAlerts, setFraudAlerts] = useState<FraudAlertItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [dailyReports, setDailyReports] = useState<DailyReportItem[]>([]);
   const [chainVerified, setChainVerified] = useState<boolean | null>(null);
   const [verifyingChain, setVerifyingChain] = useState(false);
   const [search, setSearch] = useState('');
 
-  // 24h mock hourly transaction volume for Recharts
-  const hourlyData = [
-    { hour: '00:00', volume: 12000, txns: 14 },
-    { hour: '04:00', volume: 8500, txns: 9 },
-    { hour: '08:00', volume: 45000, txns: 42 },
-    { hour: '12:00', volume: 89000, txns: 78 },
-    { hour: '16:00', volume: 124000, txns: 110 },
-    { hour: '20:00', volume: 67000, txns: 65 },
-  ];
+  // Daily reports will be used for charts instead of mock hourlyData
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [dashRes, usersRes, fraudRes, auditRes, loansRes] = await Promise.all([
+      const [dashRes, usersRes, fraudRes, auditRes, loansRes, txnRes, reportsRes] = await Promise.all([
         adminApi.getDashboard().catch(() => null),
         adminApi.getUsers({ limit: 30 }).catch(() => null),
         adminApi.getFraudAlerts({ limit: 20 }).catch(() => null),
         adminApi.getAuditLogs({ limit: 20 }).catch(() => null),
-        adminApi.getLoans().catch(() => null)
+        adminApi.getLoans().catch(() => null),
+        adminApi.getTransactions({ limit: 50 }).catch(() => null),
+        adminApi.getDailyReports().catch(() => null)
       ]);
 
       if (dashRes?.data?.success && dashRes.data.dashboard) {
@@ -138,95 +151,40 @@ export default function AdminDashboardPage() {
 
       if (loansRes?.data?.success && Array.isArray(loansRes.data.loans)) {
         setLoans(loansRes.data.loans);
+      } else {
+        setLoans([]);
       }
 
       if (usersRes?.data?.success && Array.isArray(usersRes.data.users)) {
         setUsers(usersRes.data.users);
       } else {
-        // Fallback demo user directory
-        setUsers([
-          {
-            id: 'usr-1',
-            email: 'john.doe@aegisvault.com',
-            phone: '+94771234567',
-            nic: '981234567V',
-            role: 'CUSTOMER',
-            kycStatus: 'PENDING',
-            isLocked: false,
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'usr-2',
-            email: 'saman.perera@aegisvault.com',
-            phone: '+94719876543',
-            nic: '200112345678',
-            role: 'CUSTOMER',
-            kycStatus: 'VERIFIED',
-            isLocked: true,
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'usr-3',
-            email: 'admin@aegisvault.com',
-            phone: '+94112345678',
-            nic: '901112223V',
-            role: 'ADMIN',
-            kycStatus: 'VERIFIED',
-            isLocked: false,
-            createdAt: new Date().toISOString()
-          }
-        ]);
+        setUsers([]);
       }
 
       if (fraudRes?.data?.success && Array.isArray(fraudRes.data.alerts)) {
         setFraudAlerts(fraudRes.data.alerts);
       } else {
-        setFraudAlerts([
-          {
-            id: 'txn-demo-flag-1',
-            referenceNumber: 'TXN-2026-9872',
-            amount: '600000.00',
-            fromAccountId: '810023459812',
-            toAccountId: '990011223344',
-            createdAt: new Date(Date.now() - 7200000).toISOString(),
-            description: 'International wire threshold exceeded (Rule 1 Velocity Alert)'
-          },
-          {
-            id: 'txn-demo-flag-2',
-            referenceNumber: 'TXN-2026-9878',
-            amount: '750000.00',
-            fromAccountId: '810087654321',
-            toAccountId: '810011112222',
-            createdAt: new Date(Date.now() - 18000000).toISOString(),
-            description: 'High velocity transfer frequency detected (Rule 2)'
-          }
-        ]);
+        setFraudAlerts([]);
       }
 
       if (auditRes?.data?.success && Array.isArray(auditRes.data.logs)) {
         setAuditLogs(auditRes.data.logs);
       } else {
-        setAuditLogs([
-          {
-            id: 'log-1',
-            action: 'USER_REGISTER',
-            userId: 'usr-1',
-            resource: 'AUTH',
-            hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-            previousHash: '0000000000000000000000000000000000000000000000000000000000000000',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 'log-2',
-            action: 'SUSPEND_USER',
-            userId: 'SYSTEM_ADMIN',
-            resource: 'ADMIN',
-            hash: '4a1d7f6b9062de3967d169d2f3c7e42d87e0766a7b8e192c30084f8803a6a9b4',
-            previousHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-            createdAt: new Date().toISOString()
-          }
-        ]);
+        setAuditLogs([]);
       }
+
+      if (txnRes?.data?.success && Array.isArray(txnRes.data.transactions)) {
+        setTransactions(txnRes.data.transactions);
+      } else {
+        setTransactions([]);
+      }
+
+      if (reportsRes?.data?.success && Array.isArray(reportsRes.data.data)) {
+        setDailyReports(reportsRes.data.data);
+      } else {
+        setDailyReports([]);
+      }
+
     } finally {
       setLoading(false);
     }
@@ -399,7 +357,7 @@ export default function AdminDashboardPage() {
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={hourlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={dailyReports} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorVol" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.4} />
@@ -407,7 +365,7 @@ export default function AdminDashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a3449" vertical={false} />
-                <XAxis dataKey="hour" stroke="#9ca3af" fontSize={11} tickLine={false} />
+                <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} />
                 <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{
@@ -437,9 +395,9 @@ export default function AdminDashboardPage() {
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={hourlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={dailyReports} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a3449" vertical={false} />
-                <XAxis dataKey="hour" stroke="#9ca3af" fontSize={11} tickLine={false} />
+                <XAxis dataKey="date" stroke="#9ca3af" fontSize={11} tickLine={false} />
                 <YAxis stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={{
@@ -504,6 +462,18 @@ export default function AdminDashboardPage() {
         >
           <Landmark className="w-4 h-4" />
           <span>Pending Loans ({loans.filter((l) => l.status === 'PENDING').length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('transactions')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'transactions'
+              ? 'border-cyan-500 text-cyan-400'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>All Transactions ({transactions.length})</span>
         </button>
       </div>
 
@@ -621,6 +591,13 @@ export default function AdminDashboardPage() {
                     </td>
                   </tr>
                 ))}
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-sm text-gray-500">
+                      No customer accounts found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -679,6 +656,13 @@ export default function AdminDashboardPage() {
                     </td>
                   </tr>
                 ))}
+                {fraudAlerts.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-sm text-gray-500">
+                      No fraud alerts detected.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -761,6 +745,13 @@ export default function AdminDashboardPage() {
                     </td>
                   </tr>
                 ))}
+                {auditLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-sm text-gray-500">
+                      No cryptographic audit logs found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -828,6 +819,80 @@ export default function AdminDashboardPage() {
                   <tr>
                     <td colSpan={5} className="py-6 text-center text-sm text-gray-500">
                       No loan applications found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 5: All Transactions */}
+      {activeTab === 'transactions' && (
+        <div className="glass-card p-6 rounded-2xl border-cyan-500/40 shadow-glass space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-cyan-400" />
+              <span>Platform Transaction Ledger</span>
+            </h3>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/60 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">Ref Number</th>
+                  <th className="py-3 px-4">From</th>
+                  <th className="py-3 px-4">To</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Type</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40 text-sm">
+                {transactions.map((t) => (
+                  <tr key={t.id} className="hover:bg-surface-card/60 transition-colors">
+                    <td className="py-3.5 px-4 font-mono text-xs text-gray-300 font-bold">
+                      {t.referenceNumber}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs text-gray-400">
+                      {t.fromAccountId}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs text-gray-400">
+                      {t.toAccountId}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-xs font-bold text-white">
+                      {Number(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-surface border border-border text-gray-300">
+                        {t.type}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          t.status === 'SUCCESS'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : t.status === 'FAILED'
+                            ? 'bg-danger/15 text-danger border border-danger/30'
+                            : 'bg-warning/15 text-warning border border-warning/30'
+                        }`}
+                      >
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-gray-400">
+                      {new Date(t.createdAt).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+                {transactions.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-sm text-gray-500">
+                      No transactions found.
                     </td>
                   </tr>
                 )}

@@ -392,12 +392,118 @@ const listFraudAlerts = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/admin/transactions
+ * Lists all transactions with pagination and filtering
+ */
+const listTransactions = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      status,
+      type
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    const where = {};
+    if (status) where.status = status.toUpperCase();
+    if (type) where.type = type.toUpperCase();
+
+    if (search) {
+      where.OR = [
+        { referenceNumber: { contains: search, mode: 'insensitive' } },
+        { fromAccountId: { contains: search, mode: 'insensitive' } },
+        { toAccountId: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [totalCount, transactions] = await Promise.all([
+      prisma.transaction.count({ where }),
+      prisma.transaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum
+      })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      pagination: {
+        totalItems: totalCount,
+        currentPage: pageNum,
+        itemsPerPage: limitNum,
+        totalPages: Math.ceil(totalCount / limitNum)
+      },
+      transactions
+    });
+  } catch (err) {
+    logger.error('List transactions error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to list transactions.'
+    });
+  }
+};
+
+/**
+ * GET /api/admin/reports/daily
+ * Get daily summary stats for the last 7 days
+ */
+const getDailyReports = async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        createdAt: { gte: sevenDaysAgo },
+        status: 'SUCCESS'
+      },
+      select: {
+        amount: true,
+        createdAt: true
+      }
+    });
+
+    const dailyStats = transactions.reduce((acc, txn) => {
+      const date = txn.createdAt.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = { date, volume: 0, txns: 0 };
+      }
+      acc[date].volume += Number(txn.amount);
+      acc[date].txns += 1;
+      return acc;
+    }, {});
+
+    const sortedStats = Object.values(dailyStats).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return res.status(200).json({
+      success: true,
+      data: sortedStats
+    });
+  } catch (err) {
+    logger.error('Get daily reports error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve daily reports.'
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   listUsers,
   suspendUser,
   verifyUserKyc,
   unlockUser,
-  listFraudAlerts
+  listFraudAlerts,
+  listTransactions,
+  getDailyReports
 };
-
