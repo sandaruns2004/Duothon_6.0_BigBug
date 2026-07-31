@@ -123,6 +123,8 @@ services:
     environment:
       - PORT=3002
       - DATABASE_URL=postgresql://aegis_admin:${DB_PASSWORD:-securep@ss123}@postgres:5432/aegisvault?schema=acct_db
+      - TRANSACTION_SERVICE_URL=http://transaction-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
     depends_on:
       postgres:
         condition: service_healthy

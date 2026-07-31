@@ -270,9 +270,11 @@ const executeTransfer = async (req, res) => {
       transfer: {
         fromAccountId: result.sender.id,
         fromAccountNumber: result.sender.accountNumber,
+        fromUserId: result.sender.userId,
         newSenderBalance: Number(result.sender.balance),
         toAccountId: result.receiver.id,
         toAccountNumber: result.receiver.accountNumber,
+        toUserId: result.receiver.userId,
         newReceiverBalance: Number(result.receiver.balance),
         amount: transferAmount,
         currency: currency || 'LKR',
@@ -395,8 +397,9 @@ const payBill = async (req, res) => {
     });
 
     // Automatically record payment in transaction ledger for unified history & fraud check
-    recordLedgerTransaction({
+    await recordLedgerTransaction({
       userId,
+      email: req.headers['x-user-email'],
       fromAccountId: sourceAccountNumber || String(targetAccountId),
       toAccountId: `${targetBiller}-BILLER`,
       amount: paymentAmount,

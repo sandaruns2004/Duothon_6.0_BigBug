@@ -3,7 +3,7 @@ const axios = require('axios');
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
 const { evaluateFraudRules } = require('../utils/fraudEngine');
-const { dispatchAsyncNotifications } = require('../utils/notifier');
+const { dispatchAsyncNotifications, dispatchRecipientNotification } = require('../utils/notifier');
 const { simulateISO8583Clearing } = require('../utils/iso8583');
 
 // ═══════════════════════════════════════════════════════════════════
@@ -11,6 +11,40 @@ const { simulateISO8583Clearing } = require('../utils/iso8583');
 // ═══════════════════════════════════════════════════════════════════
 
 const ACCOUNT_SERVICE_URL = process.env.ACCOUNT_SERVICE_URL || 'http://account-service:3002';
+
+const getAccountServiceUrls = () => {
+  const urls = [
+    process.env.ACCOUNT_SERVICE_URL,
+    'http://account-service:3002',
+    'http://localhost:3002',
+    'http://127.0.0.1:3002'
+  ];
+  return Array.from(new Set(urls.filter(Boolean)));
+};
+
+const getUserAccountIds = async (userId) => {
+  if (!userId) return [];
+  const urls = getAccountServiceUrls();
+  for (const baseUrl of urls) {
+    try {
+      const response = await axios.get(`${baseUrl}/api/accounts`, {
+        headers: { 'x-user-id': String(userId) },
+        timeout: 3000
+      });
+      if (response.data && Array.isArray(response.data.accounts)) {
+        const identifiers = [];
+        response.data.accounts.forEach((acc) => {
+          if (acc.accountNumber) identifiers.push(String(acc.accountNumber));
+          if (acc.id) identifiers.push(String(acc.id));
+        });
+        return Array.from(new Set(identifiers));
+      }
+    } catch (e) {
+      // Try next URL on network/host error
+    }
+  }
+  return [];
+};
 
 const getAuthenticatedUserId = (req) => {
   return req.headers['x-user-id'] || (req.user && (req.user.sub || req.user.id)) || null;
@@ -141,6 +175,16 @@ const transfer = async (req, res) => {
       userEmail: req.headers['x-user-email']
     });
 
+    if (transferResult && transferResult.transfer && transferResult.transfer.toUserId && String(transferResult.transfer.toUserId) !== String(newTransaction.userId)) {
+      dispatchRecipientNotification({
+        userId: transferResult.transfer.toUserId,
+        amount: numericAmount,
+        currency: currency || 'LKR',
+        referenceNumber,
+        accountNumber: transferResult.transfer.toAccountNumber
+      });
+    }
+
     logger.info('💸 Transaction processed successfully:', {
       transactionId: newTransaction.id,
       referenceNumber,
@@ -194,8 +238,11 @@ const listTransactions = async (req, res) => {
         { toAccountId: accountId }
       ];
     } else if (userId) {
+      const userAccIds = await getUserAccountIds(userId);
       where.OR = [
         { userId: String(userId) },
+        ...userAccIds.map((id) => ({ fromAccountId: id })),
+        ...userAccIds.map((id) => ({ toAccountId: id })),
         { fromAccountId: '810000000001' },
         { toAccountId: '810000000001' },
         { fromAccountId: '810000000002' },
@@ -580,6 +627,12 @@ const recordTransaction = async (req, res) => {
       type: record.type,
       amount: numericAmount,
       status: record.status
+    });
+
+    dispatchAsyncNotifications({
+      transaction: record,
+      fraudEvaluation,
+      userEmail: req.headers['x-user-email'] || req.body.email
     });
 
     return res.status(201).json({
