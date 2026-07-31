@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Eye, 
   EyeOff, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import { accountApi, txnApi } from '@/lib/api';
 import { motion } from 'framer-motion';
+import Cookies from 'js-cookie';
 
 interface Account {
   id: string;
@@ -41,11 +43,20 @@ interface Transaction {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAcc, setSelectedAcc] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showBalance, setShowBalance] = useState(true);
   const [loading, setLoading] = useState(true);
+
+  // Role-based redirect guard: Admins should be on /admin, not /dashboard
+  useEffect(() => {
+    const role = Cookies.get('userRole') || localStorage.getItem('userRole');
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+      router.replace('/admin');
+    }
+  }, [router]);
 
   const fetchDashboardData = async () => {
     setLoading(true);

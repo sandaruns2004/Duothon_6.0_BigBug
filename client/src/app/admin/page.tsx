@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ShieldAlert, 
   Users, 
@@ -29,6 +30,7 @@ import {
   Bar 
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import Cookies from 'js-cookie';
 
 interface UserItem {
   id: string;
@@ -62,8 +64,17 @@ interface AuditLogItem {
 }
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'users' | 'fraud' | 'audit'>('users');
   const [loading, setLoading] = useState(true);
+
+  // Role-based redirect guard: Non-admins should not access /admin
+  useEffect(() => {
+    const role = Cookies.get('userRole') || localStorage.getItem('userRole');
+    if (role && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+      router.replace('/dashboard');
+    }
+  }, [router]);
 
   // Dashboard Aggregation Stats
   const [stats, setStats] = useState({
