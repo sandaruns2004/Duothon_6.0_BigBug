@@ -11,7 +11,8 @@ const recordLedgerTransaction = async (txnData) => {
       const response = await fetch(`${TRANSACTION_SERVICE_URL}/api/transactions/record`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(txnData.userId ? { 'x-user-id': String(txnData.userId) } : {})
         },
         body: JSON.stringify(txnData)
       });

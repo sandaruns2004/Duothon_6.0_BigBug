@@ -514,7 +514,7 @@ const externalTransfer = async (req, res) => {
  */
 const recordTransaction = async (req, res) => {
   try {
-    const userId = getAuthenticatedUserId(req);
+    const userId = getAuthenticatedUserId(req) || req.body.userId || null;
     const {
       fromAccountId,
       toAccountId,
