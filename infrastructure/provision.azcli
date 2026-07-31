@@ -30,6 +30,7 @@ create_app() {
   APP_NAME=$1
   INGRESS_TYPE=$2
   TARGET_PORT=$3
+  MIN_REPLICAS=${4:-0}
   echo "🚀 Creating Container App: $APP_NAME ($INGRESS_TYPE ingress)"
   
   az containerapp create \
@@ -39,7 +40,7 @@ create_app() {
     --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
     --ingress $INGRESS_TYPE \
     --target-port $TARGET_PORT \
-    --min-replicas 0 \
+    --min-replicas $MIN_REPLICAS \
     --max-replicas 1
 }
 
@@ -48,7 +49,7 @@ echo "⚙️ 4/5 Provisioning Internal Microservices..."
 create_app "auth-service" "internal" 3001
 create_app "account-service" "internal" 3002
 create_app "transaction-service" "internal" 3003
-create_app "notification-service" "internal" 3004
+create_app "notification-service" "internal" 3004 1
 create_app "admin-service" "internal" 3005
 
 # 5. Create Infrastructure Services
