@@ -71,37 +71,10 @@ export default function ProfileAndNotificationsPage() {
       if (res.data?.success && Array.isArray(res.data.notifications)) {
         setNotifications(res.data.notifications);
       } else {
-        // Fallback demo notifications
-        setNotifications([
-          {
-            id: 'notif-1',
-            title: '🔐 Login Alert from New IP Address',
-            message: 'A successful login was detected from IP 192.168.1.105 (Colombo, LKR).',
-            type: 'SECURITY',
-            channel: 'EMAIL',
-            isRead: false,
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-          },
-          {
-            id: 'notif-2',
-            title: '🚨 Fraud Velocity Warning Triggered',
-            message: 'An international wire transfer of 600,000.00 LKR was flagged for manual review.',
-            type: 'FRAUD_ALERT',
-            channel: 'PUSH',
-            isRead: false,
-            createdAt: new Date(Date.now() - 14400000).toISOString(),
-          },
-          {
-            id: 'notif-3',
-            title: '⚡ ACID Transfer Completed',
-            message: 'Your transfer of 25,000.00 LKR to Account 810087654321 was cleared successfully.',
-            type: 'TRANSACTION',
-            channel: 'EMAIL',
-            isRead: true,
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-          },
-        ]);
+        setNotifications([]);
       }
+    } catch {
+      setNotifications([]);
     } finally {
       setLoadingNotifs(false);
     }
