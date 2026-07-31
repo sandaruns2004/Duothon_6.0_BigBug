@@ -11,14 +11,21 @@ import {
   Zap, 
   Droplet, 
   Wifi, 
-  Smartphone 
+  Smartphone,
+  ShieldAlert,
+  ShieldCheck,
+  FileText,
+  ArrowRight
 } from 'lucide-react';
-import { accountApi } from '@/lib/api';
+import { accountApi, authApi } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 export default function PaymentsAndLoansPage() {
   const [activeTab, setActiveTab] = useState<'bills' | 'loans'>('bills');
   const [userAccountNumber, setUserAccountNumber] = useState('');
+  const [kycStatus, setKycStatus] = useState<string>('UNVERIFIED');
+  const [kycLoading, setKycLoading] = useState<boolean>(true);
 
   useEffect(() => {
     accountApi.getAccounts()
@@ -31,6 +38,17 @@ export default function PaymentsAndLoansPage() {
         }
       })
       .catch(() => {});
+
+    authApi.getMe()
+      .then((res) => {
+        if (res.data?.success && res.data.user?.kycStatus) {
+          setKycStatus(res.data.user.kycStatus);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setKycLoading(false);
+      });
   }, []);
 
   // Utility Bill Form State
@@ -379,6 +397,55 @@ export default function PaymentsAndLoansPage() {
             </span>
           </div>
 
+          {/* KYC Governance Prerequisite Banner */}
+          {!kycLoading && (
+            kycStatus === 'VERIFIED' ? (
+              <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-white">Identity Verification Complete</h4>
+                    <p className="text-xs text-emerald-300/80">Your Sri Lankan NIC / Passport is verified. You have full access to apply for AegisVault financing.</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold uppercase">
+                  ✅ Eligible
+                </span>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-warning/15 border border-warning/40 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-white">Identity Verification (KYC) Required</h4>
+                      <p className="text-xs text-warning/90 mt-0.5">
+                        {kycStatus === 'PENDING'
+                          ? 'Your KYC document is currently pending administrative review. Loan application access will be unlocked once an Admin verifies your document.'
+                          : kycStatus === 'REJECTED'
+                          ? 'Your KYC document was rejected by an Administrative Officer. Please re-submit a clear, valid NIC or Passport document.'
+                          : 'You must complete KYC identity verification by uploading your Sri Lankan NIC or Passport before applying for financing.'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-warning/20 border border-warning/40 text-warning text-xs font-bold uppercase flex-shrink-0">
+                    {kycStatus}
+                  </span>
+                </div>
+                <div className="flex justify-end">
+                  <Link
+                    href="/profile"
+                    className="px-4 py-2 rounded-lg bg-warning/20 hover:bg-warning/30 text-warning border border-warning/40 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Go to Profile & KYC to Upload Document</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+            )
+          )}
+
           {loanError && (
             <div className="p-3.5 rounded-xl bg-danger/15 border border-danger/40 flex items-start gap-3 text-danger text-sm">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -486,10 +553,15 @@ export default function PaymentsAndLoansPage() {
                 <button
                   type="button"
                   onClick={handleLoanSubmit}
-                  disabled={loanLoading}
-                  className="w-full btn-accent py-3 font-semibold text-sm"
+                  disabled={loanLoading || kycStatus !== 'VERIFIED'}
+                  className={`w-full py-3 font-semibold text-sm rounded-xl transition-all ${
+                    kycStatus === 'VERIFIED'
+                      ? 'btn-accent'
+                      : 'bg-gray-700/50 text-gray-400 border border-gray-600/50 cursor-not-allowed'
+                  }`}
+                  title={kycStatus !== 'VERIFIED' ? `KYC Status is ${kycStatus}. Identity verification required.` : ''}
                 >
-                  {loanLoading ? 'Submitting Application...' : 'Apply for Financing Now (+ Credit)'}
+                  {loanLoading ? 'Submitting Application...' : kycStatus === 'VERIFIED' ? 'Apply for Financing Now (+ Credit)' : `Apply Disabled (${kycStatus} KYC)`}
                 </button>
                 <button
                   type="button"

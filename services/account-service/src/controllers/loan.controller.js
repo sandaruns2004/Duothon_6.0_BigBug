@@ -575,6 +575,52 @@ const approveLoan = async (req, res) => {
   }
 };
 
+/**
+ * Admin action: Reject pending loan application
+ */
+const rejectLoan = async (req, res) => {
+  const { id } = req.params;
+  const { reason = 'Loan application rejected by Admin after credit risk evaluation.' } = req.body;
+
+  try {
+    const loan = await prisma.loan.findUnique({
+      where: { id },
+      include: { account: true }
+    });
+
+    if (!loan) {
+      return res.status(404).json({ success: false, error: 'Loan not found.' });
+    }
+
+    if (loan.status !== 'PENDING') {
+      return res.status(400).json({ success: false, error: `Loan is already in ${loan.status} status.` });
+    }
+
+    const updatedLoan = await prisma.loan.update({
+      where: { id },
+      data: { status: 'REJECTED' }
+    });
+
+    logger.info('❌ Loan rejected by admin:', { loanId: id, accountId: loan.accountId, amount: Number(loan.amount), reason });
+
+    sendAccountNotification({
+      userId: loan.userId,
+      title: `❌ Loan Rejected: LKR ${Number(loan.amount).toLocaleString()}`,
+      message: `Your loan application for ${Number(loan.amount).toLocaleString()} LKR was reviewed and declined by Admin.`,
+      type: 'TRANSACTION'
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Loan application rejected successfully.',
+      loan: updatedLoan
+    });
+  } catch (err) {
+    logger.error('Loan rejection error:', { error: err.message });
+    return res.status(500).json({ success: false, error: 'Failed to reject loan.' });
+  }
+};
+
 module.exports = {
   applyLoan,
   listLoans,
@@ -582,6 +628,7 @@ module.exports = {
   calculateLoan,
   payInstallment,
   generateAmortizationSchedule,
-  approveLoan
+  approveLoan,
+  rejectLoan
 };
 

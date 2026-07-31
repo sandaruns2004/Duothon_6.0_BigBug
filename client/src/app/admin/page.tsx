@@ -205,6 +205,18 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleRejectLoan = async (id: string) => {
+    try {
+      await adminApi.rejectLoan(id, 'Rejected by Admin after credit risk evaluation');
+      setLoans((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, status: 'REJECTED' } : l))
+      );
+      window.dispatchEvent(new Event('notification-updated'));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Governance actions
   const handleSuspend = async (id: string) => {
     try {
@@ -245,6 +257,20 @@ export default function AdminDashboardPage() {
     } catch {
       setUsers((prev) =>
         prev.map((u) => (u.id === id ? { ...u, kycStatus: 'VERIFIED' } : u))
+      );
+    }
+  };
+
+  const handleRejectKyc = async (id: string) => {
+    try {
+      await adminApi.rejectKyc(id, 'KYC document verification rejected');
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, kycStatus: 'REJECTED' } : u))
+      );
+      window.dispatchEvent(new Event('notification-updated'));
+    } catch {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === id ? { ...u, kycStatus: 'REJECTED' } : u))
       );
     }
   };
@@ -560,11 +586,19 @@ export default function AdminDashboardPage() {
                           )}
                           <button
                             onClick={() => handleVerifyKyc(u.id)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1 mr-1"
                             title="Verify KYC"
                           >
                             <UserCheck className="w-3.5 h-3.5" />
                             <span>Verify</span>
+                          </button>
+                          <button
+                            onClick={() => handleRejectKyc(u.id)}
+                            className="px-2.5 py-1 rounded-lg bg-danger/15 hover:bg-danger/25 text-danger border border-danger/30 text-xs font-semibold inline-flex items-center gap-1"
+                            title="Reject KYC"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Reject</span>
                           </button>
                         </>
                       )}
@@ -802,15 +836,24 @@ export default function AdminDashboardPage() {
                         {l.status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                     <td className="py-3.5 px-4 text-right">
                       {l.status === 'PENDING' && (
-                        <button
-                          onClick={() => handleApproveLoan(l.id)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Approve</span>
-                        </button>
+                        <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => handleApproveLoan(l.id)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-semibold inline-flex items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() => handleRejectLoan(l.id)}
+                            className="px-2.5 py-1 rounded-lg bg-danger/15 hover:bg-danger/25 text-danger border border-danger/30 text-xs font-semibold inline-flex items-center gap-1"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Reject</span>
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -959,6 +1002,16 @@ export default function AdminDashboardPage() {
                 >
                   <UserCheck className="w-4 h-4" />
                   <span>Approve KYC</span>
+                </button>
+                <button
+                  onClick={() => {
+                    handleRejectKyc(selectedKycUser.id);
+                    setSelectedKycUser(null);
+                  }}
+                  className="px-4 py-2 text-sm font-semibold bg-danger hover:bg-danger/80 text-white rounded-lg shadow-lg flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Reject KYC</span>
                 </button>
               </div>
             </motion.div>

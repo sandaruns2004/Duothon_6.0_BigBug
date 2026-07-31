@@ -183,6 +183,7 @@ exports.AccountStatus = exports.$Enums.AccountStatus = {
 exports.LoanStatus = exports.$Enums.LoanStatus = {
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
   ACTIVE: 'ACTIVE',
   PAID: 'PAID'
 };

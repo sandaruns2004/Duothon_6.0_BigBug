@@ -13,6 +13,7 @@ router.post('/calculate', loanController.calculateLoan);
 router.post('/pay', loanController.payInstallment);
 router.post('/:id/pay', loanController.payInstallment);
 router.put('/:id/approve', loanController.approveLoan);
+router.put('/:id/reject', loanController.rejectLoan);
 router.get('/', loanController.listLoans);
 
 router.get('/:id', loanController.getLoan);

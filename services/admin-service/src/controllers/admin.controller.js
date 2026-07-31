@@ -279,6 +279,74 @@ const verifyUserKyc = async (req, res) => {
 };
 
 /**
+ * PUT /api/admin/users/:id/reject-kyc
+ * Rejects user KYC status and records an admin audit action
+ */
+const rejectUserKyc = async (req, res) => {
+  try {
+    const adminId = getAuthenticatedAdminId(req);
+    const { id } = req.params;
+    const { reason = 'KYC document verification rejected by administrative officer due to unclear or invalid document.' } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User account not found.'
+      });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { kycStatus: 'REJECTED' },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isLocked: true,
+        kycStatus: true,
+        updatedAt: true
+      }
+    });
+
+    // Record Admin Action
+    await prisma.adminAction.create({
+      data: {
+        adminUserId: String(adminId),
+        action: 'REJECT_USER_KYC',
+        targetUserId: id,
+        reason
+      }
+    });
+
+    logger.info('❌ User KYC rejected by admin:', { adminId, targetUserId: id, reason });
+
+    sendAdminNotification({
+      userId: id,
+      title: '❌ KYC Status Rejected',
+      message: 'Your identity verification document was reviewed and rejected. Please re-submit a clear, valid NIC document from the Profile & KYC section.',
+      type: 'SECURITY',
+      email: updatedUser.email
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'User KYC status rejected successfully.',
+      user: updatedUser
+    });
+  } catch (err) {
+    logger.error('Reject KYC error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to reject user KYC status.'
+    });
+  }
+};
+
+/**
  * PUT /api/admin/users/:id/unlock
  * Unlocks a suspended or lockout user account
  */
@@ -502,6 +570,7 @@ module.exports = {
   listUsers,
   suspendUser,
   verifyUserKyc,
+  rejectUserKyc,
   unlockUser,
   listFraudAlerts,
   listTransactions,
