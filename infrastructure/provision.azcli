@@ -51,8 +51,21 @@ create_app "transaction-service" "internal" 3003
 create_app "notification-service" "internal" 3004
 create_app "admin-service" "internal" 3005
 
-# 5. Create Public Services (Internet accessible)
-echo "🌐 5/5 Provisioning Public Services..."
+# 5. Create Infrastructure Services
+echo "🏗️ 5/6 Provisioning Infrastructure Services..."
+az containerapp create \
+  --name rabbitmq \
+  --resource-group $RESOURCE_GROUP \
+  --environment $ENVIRONMENT \
+  --image rabbitmq:3-management-alpine \
+  --ingress internal \
+  --target-port 5672 \
+  --min-replicas 1 \
+  --max-replicas 1 \
+  --env-vars RABBITMQ_DEFAULT_USER=guest RABBITMQ_DEFAULT_PASS=guest
+
+# 6. Create Public Services (Internet accessible)
+echo "🌐 6/6 Provisioning Public Services..."
 create_app "api-gateway" "external" 3000
 create_app "client" "external" 3000
 

@@ -149,7 +149,7 @@ jobs:
           if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
 
           REDIS_URL="redis://redis:6379"
-          RABBITMQ_URL="amqp://rabbitmq:5672"
+          RABBITMQ_URL="amqp://guest:guest@rabbitmq:5672"
 
           echo "🔐 Setting registry credentials sequentially to avoid conflicts..."
           APPS=("postgres" "auth-service" "account-service" "transaction-service" "notification-service" "admin-service" "api-gateway" "client")
