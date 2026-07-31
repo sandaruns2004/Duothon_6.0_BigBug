@@ -67,16 +67,20 @@ export default function Navbar() {
     }
   };
 
-  const navLinks = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transfer', href: '/transfer', icon: Send },
-    { name: 'Transactions', href: '/transactions', icon: History },
-    { name: 'Payments & Loans', href: '/payments', icon: CreditCard },
-    { name: 'Profile & KYC', href: '/profile', icon: UserCheck },
-  ];
+  let navLinks = [];
 
   if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
-    navLinks.push({ name: 'Admin Governance', href: '/admin', icon: ShieldAlert });
+    navLinks = [
+      { name: 'Admin Command Center', href: '/admin', icon: ShieldAlert }
+    ];
+  } else {
+    navLinks = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Transfer', href: '/transfer', icon: Send },
+      { name: 'Transactions', href: '/transactions', icon: History },
+      { name: 'Payments & Loans', href: '/payments', icon: CreditCard },
+      { name: 'Profile & KYC', href: '/profile', icon: UserCheck },
+    ];
   }
 
   // Do not display Navbar on login/register routes for cleaner full-screen focus
