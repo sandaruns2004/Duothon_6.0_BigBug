@@ -9,7 +9,9 @@ const { validate, transferSchema, externalTransferSchema } = require('../utils/v
 
 router.post('/transfer', validate(transferSchema), transactionController.transfer);
 router.post('/external-transfer', validate(externalTransferSchema), transactionController.externalTransfer);
+router.post('/record', transactionController.recordTransaction);
 router.get('/', transactionController.listTransactions);
+
 router.get('/:id', transactionController.getTransaction);
 router.get('/:id/receipt', transactionController.getReceipt);
 

@@ -166,6 +166,7 @@ exports.Prisma.AccountScalarFieldEnum = {
 
 exports.Prisma.TransactionScalarFieldEnum = {
   id: 'id',
+  userId: 'userId',
   referenceNumber: 'referenceNumber',
   fromAccountId: 'fromAccountId',
   toAccountId: 'toAccountId',

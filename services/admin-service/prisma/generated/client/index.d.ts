@@ -4943,6 +4943,7 @@ export namespace Prisma {
 
   export type TransactionMinAggregateOutputType = {
     id: string | null
+    userId: string | null
     referenceNumber: string | null
     fromAccountId: string | null
     toAccountId: string | null
@@ -4958,6 +4959,7 @@ export namespace Prisma {
 
   export type TransactionMaxAggregateOutputType = {
     id: string | null
+    userId: string | null
     referenceNumber: string | null
     fromAccountId: string | null
     toAccountId: string | null
@@ -4973,6 +4975,7 @@ export namespace Prisma {
 
   export type TransactionCountAggregateOutputType = {
     id: number
+    userId: number
     referenceNumber: number
     fromAccountId: number
     toAccountId: number
@@ -4998,6 +5001,7 @@ export namespace Prisma {
 
   export type TransactionMinAggregateInputType = {
     id?: true
+    userId?: true
     referenceNumber?: true
     fromAccountId?: true
     toAccountId?: true
@@ -5013,6 +5017,7 @@ export namespace Prisma {
 
   export type TransactionMaxAggregateInputType = {
     id?: true
+    userId?: true
     referenceNumber?: true
     fromAccountId?: true
     toAccountId?: true
@@ -5028,6 +5033,7 @@ export namespace Prisma {
 
   export type TransactionCountAggregateInputType = {
     id?: true
+    userId?: true
     referenceNumber?: true
     fromAccountId?: true
     toAccountId?: true
@@ -5130,6 +5136,7 @@ export namespace Prisma {
 
   export type TransactionGroupByOutputType = {
     id: string
+    userId: string | null
     referenceNumber: string
     fromAccountId: string
     toAccountId: string
@@ -5164,6 +5171,7 @@ export namespace Prisma {
 
   export type TransactionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    userId?: boolean
     referenceNumber?: boolean
     fromAccountId?: boolean
     toAccountId?: boolean
@@ -5179,6 +5187,7 @@ export namespace Prisma {
 
   export type TransactionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    userId?: boolean
     referenceNumber?: boolean
     fromAccountId?: boolean
     toAccountId?: boolean
@@ -5194,6 +5203,7 @@ export namespace Prisma {
 
   export type TransactionSelectScalar = {
     id?: boolean
+    userId?: boolean
     referenceNumber?: boolean
     fromAccountId?: boolean
     toAccountId?: boolean
@@ -5213,6 +5223,7 @@ export namespace Prisma {
     objects: {}
     scalars: $Extensions.GetPayloadResult<{
       id: string
+      userId: string | null
       referenceNumber: string
       fromAccountId: string
       toAccountId: string
@@ -5618,6 +5629,7 @@ export namespace Prisma {
    */ 
   interface TransactionFieldRefs {
     readonly id: FieldRef<"Transaction", 'String'>
+    readonly userId: FieldRef<"Transaction", 'String'>
     readonly referenceNumber: FieldRef<"Transaction", 'String'>
     readonly fromAccountId: FieldRef<"Transaction", 'String'>
     readonly toAccountId: FieldRef<"Transaction", 'String'>
@@ -5987,6 +5999,7 @@ export namespace Prisma {
 
   export const TransactionScalarFieldEnum: {
     id: 'id',
+    userId: 'userId',
     referenceNumber: 'referenceNumber',
     fromAccountId: 'fromAccountId',
     toAccountId: 'toAccountId',
@@ -6381,6 +6394,7 @@ export namespace Prisma {
     OR?: TransactionWhereInput[]
     NOT?: TransactionWhereInput | TransactionWhereInput[]
     id?: StringFilter<"Transaction"> | string
+    userId?: StringNullableFilter<"Transaction"> | string | null
     referenceNumber?: StringFilter<"Transaction"> | string
     fromAccountId?: StringFilter<"Transaction"> | string
     toAccountId?: StringFilter<"Transaction"> | string
@@ -6396,6 +6410,7 @@ export namespace Prisma {
 
   export type TransactionOrderByWithRelationInput = {
     id?: SortOrder
+    userId?: SortOrderInput | SortOrder
     referenceNumber?: SortOrder
     fromAccountId?: SortOrder
     toAccountId?: SortOrder
@@ -6415,6 +6430,7 @@ export namespace Prisma {
     AND?: TransactionWhereInput | TransactionWhereInput[]
     OR?: TransactionWhereInput[]
     NOT?: TransactionWhereInput | TransactionWhereInput[]
+    userId?: StringNullableFilter<"Transaction"> | string | null
     fromAccountId?: StringFilter<"Transaction"> | string
     toAccountId?: StringFilter<"Transaction"> | string
     amount?: DecimalFilter<"Transaction"> | Decimal | DecimalJsLike | number | string
@@ -6429,6 +6445,7 @@ export namespace Prisma {
 
   export type TransactionOrderByWithAggregationInput = {
     id?: SortOrder
+    userId?: SortOrderInput | SortOrder
     referenceNumber?: SortOrder
     fromAccountId?: SortOrder
     toAccountId?: SortOrder
@@ -6452,6 +6469,7 @@ export namespace Prisma {
     OR?: TransactionScalarWhereWithAggregatesInput[]
     NOT?: TransactionScalarWhereWithAggregatesInput | TransactionScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Transaction"> | string
+    userId?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
     referenceNumber?: StringWithAggregatesFilter<"Transaction"> | string
     fromAccountId?: StringWithAggregatesFilter<"Transaction"> | string
     toAccountId?: StringWithAggregatesFilter<"Transaction"> | string
@@ -6761,6 +6779,7 @@ export namespace Prisma {
 
   export type TransactionCreateInput = {
     id?: string
+    userId?: string | null
     referenceNumber: string
     fromAccountId: string
     toAccountId: string
@@ -6776,6 +6795,7 @@ export namespace Prisma {
 
   export type TransactionUncheckedCreateInput = {
     id?: string
+    userId?: string | null
     referenceNumber: string
     fromAccountId: string
     toAccountId: string
@@ -6791,6 +6811,7 @@ export namespace Prisma {
 
   export type TransactionUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
     referenceNumber?: StringFieldUpdateOperationsInput | string
     fromAccountId?: StringFieldUpdateOperationsInput | string
     toAccountId?: StringFieldUpdateOperationsInput | string
@@ -6806,6 +6827,7 @@ export namespace Prisma {
 
   export type TransactionUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
     referenceNumber?: StringFieldUpdateOperationsInput | string
     fromAccountId?: StringFieldUpdateOperationsInput | string
     toAccountId?: StringFieldUpdateOperationsInput | string
@@ -6821,6 +6843,7 @@ export namespace Prisma {
 
   export type TransactionCreateManyInput = {
     id?: string
+    userId?: string | null
     referenceNumber: string
     fromAccountId: string
     toAccountId: string
@@ -6836,6 +6859,7 @@ export namespace Prisma {
 
   export type TransactionUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
     referenceNumber?: StringFieldUpdateOperationsInput | string
     fromAccountId?: StringFieldUpdateOperationsInput | string
     toAccountId?: StringFieldUpdateOperationsInput | string
@@ -6851,6 +6875,7 @@ export namespace Prisma {
 
   export type TransactionUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
     referenceNumber?: StringFieldUpdateOperationsInput | string
     fromAccountId?: StringFieldUpdateOperationsInput | string
     toAccountId?: StringFieldUpdateOperationsInput | string
@@ -7206,6 +7231,7 @@ export namespace Prisma {
 
   export type TransactionCountOrderByAggregateInput = {
     id?: SortOrder
+    userId?: SortOrder
     referenceNumber?: SortOrder
     fromAccountId?: SortOrder
     toAccountId?: SortOrder
@@ -7225,6 +7251,7 @@ export namespace Prisma {
 
   export type TransactionMaxOrderByAggregateInput = {
     id?: SortOrder
+    userId?: SortOrder
     referenceNumber?: SortOrder
     fromAccountId?: SortOrder
     toAccountId?: SortOrder
@@ -7240,6 +7267,7 @@ export namespace Prisma {
 
   export type TransactionMinOrderByAggregateInput = {
     id?: SortOrder
+    userId?: SortOrder
     referenceNumber?: SortOrder
     fromAccountId?: SortOrder
     toAccountId?: SortOrder

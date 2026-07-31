@@ -81,6 +81,7 @@ model Account {
 
 model Transaction {
   id              String   @id @default(uuid())
+  userId          String?  @map("user_id")
   referenceNumber String   @unique @map("reference_number")
   fromAccountId   String   @map("from_account_id")
   toAccountId     String   @map("to_account_id")

@@ -163,7 +163,9 @@ export const accountApi = {
   executeTransfer: (data: Record<string, unknown>) => api.post('/api/transactions/transfer', data),
   payBill: (data: Record<string, unknown>) => api.post('/api/payments/bill', data),
   applyLoan: (data: Record<string, unknown>) => api.post('/api/loans/apply', data),
+  payInstallment: (data: Record<string, unknown>) => api.post('/api/loans/pay', data),
 };
+
 
 export const txnApi = {
   transfer: (data: Record<string, unknown>) => api.post('/api/transactions/transfer', data),

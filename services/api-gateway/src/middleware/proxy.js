@@ -22,6 +22,7 @@ const createServiceProxy = (targetUrl, serviceName) => {
     changeOrigin: true,
     secure: false,
     xfwd: true,
+    pathRewrite: (path, req) => req.originalUrl,
 
     on: {
       proxyReq: (proxyReq, req, res) => {

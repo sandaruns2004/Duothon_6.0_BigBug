@@ -32,7 +32,8 @@ interface Transaction {
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'FLAGGED'>('ALL');
+  const [activeTab, setActiveTab] = useState<'ALL' | 'CREDIT' | 'DEBIT' | 'BILLS' | 'LOANS' | 'FLAGGED'>('ALL');
+
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -63,7 +64,7 @@ export default function TransactionsPage() {
     setLoading(true);
     try {
       const res = await txnApi.getTransactions({ limit: 50 });
-      if (res.data?.success && Array.isArray(res.data.transactions)) {
+      if (res.data?.success && Array.isArray(res.data.transactions) && res.data.transactions.length > 0) {
         setTransactions(res.data.transactions);
       } else {
         // Fallback demo transactions
@@ -106,14 +107,48 @@ export default function TransactionsPage() {
             id: 'txn-104',
             referenceNumber: 'TXN-2026-8804',
             amount: '4500.00',
-            type: 'BILL_PAYMENT',
+            type: 'PAYMENT',
             status: 'SUCCESS',
             fromAccountId: myAccountNumber,
-            toAccountId: 'CEB-BILLER-01',
+            toAccountId: 'CEB-BILLER',
             createdAt: new Date(Date.now() - 86400000).toISOString(),
-            description: 'Ceylon Electricity Board'
+            description: 'CEB Utility / Reload Payment (Ref: 1089234561)'
+          },
+          {
+            id: 'txn-105',
+            referenceNumber: 'TXN-2026-8805',
+            amount: '1500.00',
+            type: 'PAYMENT',
+            status: 'SUCCESS',
+            fromAccountId: myAccountNumber,
+            toAccountId: 'DIALOG-BILLER',
+            createdAt: new Date(Date.now() - 172800000).toISOString(),
+            description: 'DIALOG Utility / Reload Payment (Ref: 0771234567)'
+          },
+          {
+            id: 'txn-106',
+            referenceNumber: 'LOAN-DISB-9901',
+            amount: '500000.00',
+            type: 'DEPOSIT',
+            status: 'SUCCESS',
+            fromAccountId: 'AEGISVAULT-FINANCE',
+            toAccountId: myAccountNumber,
+            createdAt: new Date(Date.now() - 259200000).toISOString(),
+            description: 'Loan Disbursement - Personal Financing (Loan #LOAN-9901)'
+          },
+          {
+            id: 'txn-107',
+            referenceNumber: 'EMI-48092',
+            amount: '25000.00',
+            type: 'PAYMENT',
+            status: 'SUCCESS',
+            fromAccountId: myAccountNumber,
+            toAccountId: 'AEGISVAULT-FINANCE',
+            createdAt: new Date(Date.now() - 345600000).toISOString(),
+            description: 'Loan EMI Deduction - Installment Cut for Loan #LOAN-9901'
           }
         ]);
+
       }
     } catch {
       // Offline mock data handled
@@ -136,9 +171,25 @@ export default function TransactionsPage() {
         return false;
       }
 
+      const isBillOrReload =
+        txn.type === 'PAYMENT' ||
+        txn.type === 'BILL_PAYMENT' ||
+        (txn.toAccountId && txn.toAccountId.includes('-BILLER')) ||
+        (txn.description && (txn.description.toLowerCase().includes('bill') || txn.description.toLowerCase().includes('reload')));
+
+      const isLoanOrEmi =
+        txn.type === 'DEPOSIT' ||
+        txn.type === 'LOAN_DISBURSEMENT' ||
+        txn.type === 'LOAN_REPAYMENT' ||
+        (txn.referenceNumber && (txn.referenceNumber.startsWith('LOAN') || txn.referenceNumber.startsWith('EMI'))) ||
+        (txn.description && (txn.description.toLowerCase().includes('loan') || txn.description.toLowerCase().includes('emi')));
+
       if (activeTab === 'CREDIT' && !isCredit) return false;
       if (activeTab === 'DEBIT' && !isDebit) return false;
+      if (activeTab === 'BILLS' && !isBillOrReload) return false;
+      if (activeTab === 'LOANS' && !isLoanOrEmi) return false;
       if (activeTab === 'FLAGGED' && !txn.fraudFlag) return false;
+
 
       if (search) {
         const q = search.toLowerCase();
@@ -163,6 +214,32 @@ export default function TransactionsPage() {
   const handlePrintReceipt = () => {
     window.print();
   };
+
+  const handleExportCsv = () => {
+    const headers = ['Reference Number', 'Date', 'Type', 'Description', 'Direction', 'Amount (LKR)', 'Status', 'Fraud Flag'];
+    const rows = filteredTransactions.map(txn => {
+      const isCredit = txn.toAccountId === myAccountNumber;
+      return [
+        txn.referenceNumber,
+        new Date(txn.createdAt).toLocaleString(),
+        txn.type,
+        `"${(txn.description || '').replace(/"/g, '""')}"`,
+        isCredit ? 'RECEIVED (+ Credit)' : 'DEDUCTED (- Debit)',
+        Number(txn.amount).toFixed(2),
+        txn.status,
+        txn.fraudFlag ? 'FLAGGED' : 'NORMAL'
+      ];
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `aegisvault_ledger_${activeTab.toLowerCase()}_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   return (
     <div className="space-y-8">
@@ -201,6 +278,15 @@ export default function TransactionsPage() {
             </div>
           )}
           <button
+            onClick={handleExportCsv}
+            disabled={filteredTransactions.length === 0}
+            className="btn-outline text-xs py-2 px-3 self-start sm:self-center gap-1.5 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
+            title="Export filtered ledger to CSV spreadsheet"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export CSV</span>
+          </button>
+          <button
             onClick={fetchTransactions}
             disabled={loading}
             className="btn-outline text-xs py-2 px-3 self-start sm:self-center gap-1.5"
@@ -208,30 +294,42 @@ export default function TransactionsPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-primary' : ''}`} />
             <span>Sync Ledger</span>
           </button>
+
         </div>
       </div>
 
       {/* Tabs & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          {(['ALL', 'CREDIT', 'DEBIT', 'FLAGGED'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setCurrentPage(1);
-              }}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all ${
-                activeTab === tab
-                  ? tab === 'FLAGGED'
-                    ? 'bg-danger/20 text-danger border border-danger/40 shadow-sm'
-                    : 'bg-primary/20 text-primary border border-primary/40 shadow-sm'
-                  : 'bg-surface-card text-gray-400 hover:text-white border border-border'
-              }`}
-            >
-              {tab === 'FLAGGED' ? '🚨 Fraud Guard Flagged' : tab}
-            </button>
-          ))}
+          {(['ALL', 'CREDIT', 'DEBIT', 'BILLS', 'LOANS', 'FLAGGED'] as const).map((tab) => {
+            const labels: Record<string, string> = {
+              ALL: 'All Transactions',
+              CREDIT: '↓ Received (+ Credit)',
+              DEBIT: '↑ Deducted (- Debit)',
+              BILLS: '⚡ Bills & Reloads',
+              LOANS: '🏦 Loans & Financing',
+              FLAGGED: '🚨 Fraud Guard Flagged'
+            };
+            return (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setCurrentPage(1);
+                }}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all ${
+                  activeTab === tab
+                    ? tab === 'FLAGGED'
+                      ? 'bg-danger/20 text-danger border border-danger/40 shadow-sm'
+                      : 'bg-primary/20 text-primary border border-primary/40 shadow-sm'
+                    : 'bg-surface-card text-gray-400 hover:text-white border border-border'
+                }`}
+              >
+                {labels[tab] || tab}
+              </button>
+            );
+          })}
+
         </div>
 
         <div className="relative w-full md:w-64">
@@ -277,8 +375,19 @@ export default function TransactionsPage() {
                         {txn.referenceNumber}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div>
-                          <span className="font-medium text-white">{txn.type}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-white">{txn.type}</span>
+                            {isCredit ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                ↓ Received (+ Credit)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                ↑ Deducted (- Debit)
+                              </span>
+                            )}
+                          </div>
                           {txn.description && (
                             <span className="block text-xs text-gray-400">
                               {txn.description}
@@ -286,6 +395,7 @@ export default function TransactionsPage() {
                           )}
                         </div>
                       </td>
+
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5">
                           <span

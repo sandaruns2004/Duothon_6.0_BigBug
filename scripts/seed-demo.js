@@ -212,7 +212,80 @@ const runSeed = async () => {
         status: 'FLAGGED',
       },
     });
-    console.log(`  ✅ Transactions seeded (1 Normal, 1 High-Value Flagged by Rule-Based Guard)`);
+
+    const txn3 = await txnPrisma.transaction.upsert({
+      where: { referenceNumber: 'TXN-DEMO-2026-003-BILL' },
+      update: { userId: cust1.id },
+      create: {
+        id: 'txn-demo-003-bill',
+        userId: cust1.id,
+        fromAccountId: acct1.accountNumber,
+        toAccountId: 'CEB-BILLER',
+        amount: 4500.00,
+        currency: 'LKR',
+        type: 'PAYMENT',
+        status: 'SUCCESS',
+        referenceNumber: 'TXN-DEMO-2026-003-BILL',
+        fraudFlag: false,
+        description: 'CEB Utility / Reload Payment (Ref: 1089234561)',
+      },
+    });
+
+    const txn4 = await txnPrisma.transaction.upsert({
+      where: { referenceNumber: 'LOAN-DISB-9901' },
+      update: { userId: cust1.id },
+      create: {
+        id: 'txn-demo-004-loan',
+        userId: cust1.id,
+        fromAccountId: 'AEGISVAULT-FINANCE',
+        toAccountId: acct1.accountNumber,
+        amount: 500000.00,
+        currency: 'LKR',
+        type: 'DEPOSIT',
+        status: 'SUCCESS',
+        referenceNumber: 'LOAN-DISB-9901',
+        fraudFlag: false,
+        description: 'Loan Disbursement - Personal Financing (Loan #LOAN-9901)',
+      },
+    });
+
+    const txn5 = await txnPrisma.transaction.upsert({
+      where: { referenceNumber: 'EMI-48092' },
+      update: { userId: cust1.id },
+      create: {
+        id: 'txn-demo-005-emi',
+        userId: cust1.id,
+        fromAccountId: acct1.accountNumber,
+        toAccountId: 'AEGISVAULT-FINANCE',
+        amount: 25000.00,
+        currency: 'LKR',
+        type: 'PAYMENT',
+        status: 'SUCCESS',
+        referenceNumber: 'EMI-48092',
+        fraudFlag: false,
+        description: 'Loan EMI Deduction - Installment Cut for Loan #LOAN-9901',
+      },
+    });
+
+    const txn6 = await txnPrisma.transaction.upsert({
+      where: { referenceNumber: 'TXN-DEMO-2026-006-RELOAD' },
+      update: { userId: cust1.id },
+      create: {
+        id: 'txn-demo-006-reload',
+        userId: cust1.id,
+        fromAccountId: acct1.accountNumber,
+        toAccountId: 'DIALOG-BILLER',
+        amount: 1500.00,
+        currency: 'LKR',
+        type: 'PAYMENT',
+        status: 'SUCCESS',
+        referenceNumber: 'TXN-DEMO-2026-006-RELOAD',
+        fraudFlag: false,
+        description: 'DIALOG Utility / Reload Payment (Ref: 0771234567)',
+      },
+    });
+
+    console.log(`  ✅ Transactions seeded (1 Normal, 1 High-Value Flagged, 2 Bills/Reloads, 1 Loan Disb, 1 EMI Cut)`);
 
     // 4. Create Cryptographic Audit Trail Record
     console.log('📜 [4/4] Prepopulating Cryptographic SHA-256 Audit Trail...');

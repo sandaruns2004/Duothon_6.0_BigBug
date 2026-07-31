@@ -1,5 +1,7 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
+const { recordLedgerTransaction } = require('../utils/ledger');
+
 
 // ═══════════════════════════════════════════════════════════════════
 // Loan Controller (Apply Loan, List Loans, Loan Details, Amortization Schedule)
@@ -148,7 +150,22 @@ const applyLoan = async (req, res) => {
       return newLoan;
     });
 
+    if (loanStatus === 'APPROVED' || loanStatus === 'ACTIVE') {
+      recordLedgerTransaction({
+        userId,
+        fromAccountId: 'AEGISVAULT-FINANCE',
+        toAccountId: account.accountNumber,
+        amount: P,
+        currency: account.currency || 'LKR',
+        type: 'DEPOSIT',
+        status: 'SUCCESS',
+        referenceNumber: `LOAN-DISB-${result.id.slice(0, 8).toUpperCase()}`,
+        description: `Loan Disbursement - Personal Financing (Loan #${result.id.slice(0, 8)})`
+      });
+    }
+
     const amortizationSchedule = generateAmortizationSchedule(P, rate, n, monthlyPayment, result.createdAt);
+
 
     logger.info('💰 Loan application processed successfully:', {
       loanId: result.id,
@@ -368,10 +385,111 @@ const calculateLoan = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/loans/:id/pay or /api/loans/pay
+ * Executes a monthly EMI installment payment (auto-debit simulation) for a loan
+ */
+const payInstallment = async (req, res) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    const loanId = req.params.id || req.body.loanId;
+    const { accountNumber, amount } = req.body;
+
+    let loan = null;
+    if (loanId) {
+      loan = await prisma.loan.findUnique({
+        where: { id: loanId },
+        include: { account: true }
+      });
+    } else if (accountNumber) {
+      const acc = await prisma.account.findFirst({
+        where: { accountNumber: String(accountNumber) },
+        include: { loans: { orderBy: { createdAt: 'desc' } } }
+      });
+      if (acc && acc.loans.length > 0) {
+        loan = acc.loans[0];
+        loan.account = acc;
+      }
+    }
+
+    if (!loan) {
+      return res.status(404).json({
+        success: false,
+        error: 'Active loan not found for installment payment.'
+      });
+    }
+
+    const account = loan.account;
+    const paymentAmount = Number(amount || loan.monthlyPayment);
+
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid installment amount.'
+      });
+    }
+
+    if (Number(account.balance) < paymentAmount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient account balance for EMI installment deduction.',
+        code: 'INSUFFICIENT_FUNDS'
+      });
+    }
+
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { balance: { decrement: paymentAmount } }
+    });
+
+    const refNum = `EMI-${Date.now().toString(36).toUpperCase()}`;
+
+    // Log EMI deduction into the transaction ledger
+    recordLedgerTransaction({
+      userId: userId ? String(userId) : account.userId,
+      fromAccountId: account.accountNumber,
+      toAccountId: 'AEGISVAULT-FINANCE',
+      amount: paymentAmount,
+      currency: account.currency || 'LKR',
+      type: 'PAYMENT',
+      status: 'SUCCESS',
+      referenceNumber: refNum,
+      description: `Loan EMI Deduction - Installment Cut for Loan #${loan.id.slice(0, 8)}`
+    });
+
+    logger.info('💸 Loan EMI installment deducted successfully:', {
+      loanId: loan.id,
+      accountNumber: account.accountNumber,
+      amount: paymentAmount,
+      referenceNumber: refNum
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `EMI installment of LKR ${paymentAmount.toLocaleString()} deducted successfully.`,
+      transaction: {
+        referenceNumber: refNum,
+        amount: paymentAmount,
+        type: 'PAYMENT',
+        status: 'SUCCESS',
+        description: `Loan EMI Deduction - Installment Cut for Loan #${loan.id.slice(0, 8)}`
+      }
+    });
+  } catch (err) {
+    logger.error('Loan installment payment error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to process EMI installment payment.'
+    });
+  }
+};
+
 module.exports = {
   applyLoan,
   listLoans,
   getLoan,
   calculateLoan,
+  payInstallment,
   generateAmortizationSchedule
 };
+
