@@ -54,6 +54,7 @@ export type AccountStatus = (typeof AccountStatus)[keyof typeof AccountStatus]
 export const LoanStatus: {
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
   ACTIVE: 'ACTIVE',
   PAID: 'PAID'
 };

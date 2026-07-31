@@ -30,6 +30,7 @@ enum AccountStatus {
 enum LoanStatus {
   PENDING
   APPROVED
+  REJECTED
   ACTIVE
   PAID
 
