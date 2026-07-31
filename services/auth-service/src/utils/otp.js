@@ -52,16 +52,8 @@ const sendOtpEmail = async (email, otp) => {
       to: email,
       subject: 'AegisVault Security: Your Multi-Factor Login OTP',
       text: `Your AegisVault secure login OTP is: ${otp}. This code expires in 5 minutes. Do not share this code with anyone.`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #1e293b; border-radius: 8px; background-color: #0f172a; color: #f8fafc;">
-          <h2 style="color: #38bdf8;">AegisVault Security Verification</h2>
-          <p>Please use the one-time verification code below to complete your login:</p>
-          <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; background-color: #1e293b; color: #38bdf8; padding: 15px; text-align: center; border-radius: 6px; margin: 20px 0;">
-            ${otp}
-          </div>
-          <p style="color: #94a3b8; font-size: 14px;">This code is valid for <strong>5 minutes</strong>. If you did not initiate this login, please contact AegisVault Security immediately.</p>
-        </div>
-      `
+      template: 'OTP_LOGIN',
+      otp: otp
     });
 
     logger.info('📧 MFA OTP email dispatched successfully via RabbitMQ', { email });

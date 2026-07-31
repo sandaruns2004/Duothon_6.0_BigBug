@@ -41,12 +41,22 @@ class RabbitMQService {
   async publishWithTimeout(exchange, routingKey, message, timeoutMs = 3000) {
     if (!this.channelWrapper) await this.connect();
 
-    return Promise.race([
-      this.channelWrapper.publish(exchange, routingKey, message, { persistent: true }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`RabbitMQ publish timed out after ${timeoutMs}ms`)), timeoutMs)
-      )
-    ]);
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`RabbitMQ publish timed out after ${timeoutMs}ms`)), timeoutMs);
+    });
+
+    try {
+      const result = await Promise.race([
+        this.channelWrapper.publish(exchange, routingKey, message, { persistent: true }),
+        timeoutPromise
+      ]);
+      clearTimeout(timeoutId);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
 
   async publishCommand(routingKey, message) {
@@ -55,6 +65,7 @@ class RabbitMQService {
       logger.debug('📤 Published Command to RabbitMQ', { routingKey });
     } catch (err) {
       logger.error('Failed to publish command', { error: err.message, routingKey });
+      throw err;
     }
   }
 
@@ -64,6 +75,7 @@ class RabbitMQService {
       logger.debug('📤 Published Event to RabbitMQ', { routingKey });
     } catch (err) {
       logger.error('Failed to publish event', { error: err.message, routingKey });
+      throw err;
     }
   }
 

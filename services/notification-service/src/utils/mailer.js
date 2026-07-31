@@ -64,17 +64,15 @@ const sendHtmlEmail = async ({ to, subject, html, text }) => {
     });
     return { success: true, messageId: info.messageId };
   } catch (err) {
-    logger.warn('SMTP Transport unreachable (fallback to mock email delivery log):', {
+    logger.warn('SMTP Transport failed:', {
       error: err.message,
       to,
       subject,
       bodyPreview: (text || html || '').substring(0, 150)
     });
-    // Return success: true in sandbox/offline mode so user registration/login/transfer flows are never blocked
     return {
-      success: true,
-      messageId: `MOCK-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      simulated: true
+      success: false,
+      error: err.message
     };
   }
 };
