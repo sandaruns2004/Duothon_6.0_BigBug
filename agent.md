@@ -16,4 +16,8 @@ Welcome to the AegisVault project! Whenever you are working on this repository, 
    - **What it is:** The Continuous Integration and Continuous Deployment strategy.
    - **Contents:** Details the GitHub Actions workflows (`ci.yml` and `cd.yml`) used for linting, testing (Jest/Supertest), Docker image building, pushing to Azure Container Registry (ACR), and deploying to Azure Container Apps. Use this to understand *how code gets tested and deployed*.
 
-> **Note to AI Agents:** Always consult these documents before suggesting architectural changes or writing deployment scripts to ensure alignment with the established project constraints (Hackathon environment, strict microservices isolation, $200 Azure credit limit).
+4. **`transfers_and_transactions_guide.md`**
+   - **What it is:** The complete technical blueprint and operational guide for transfers, transactions, fraud detection, and JIT account provisioning.
+   - **Contents:** Details ACID SQL transactions (`account-service`), the rule-based fraud engine (`transaction-service`), SHA-256 audit logs (`notification-service`), **Just-In-Time (JIT) Auto-Provisioning** (`500k LKR` default for new users), and dynamic multi-sandbox session binding (`Customer 1` vs `Customer 2`).
+
+> **Note to AI Agents:** Always consult these documents before suggesting architectural changes or writing deployment scripts to ensure alignment with the established project constraints (Hackathon environment, strict microservices isolation, $200 Azure credit limit, and dynamic JIT account resolution).

@@ -11,12 +11,20 @@ const createAccountSchema = z.object({
 });
 
 const executeTransferSchema = z.object({
-  fromAccountId: z.string().min(1, 'Source account ID is required'),
-  toAccountId: z.string().min(1, 'Destination account ID is required'),
+  fromAccountId: z.string().optional(),
+  fromAccountNumber: z.string().optional(),
+  toAccountId: z.string().optional(),
+  toAccountNumber: z.string().optional(),
   amount: z.union([z.number().positive(), z.string()]),
   currency: z.string().optional().default('LKR'),
   referenceNumber: z.string().optional()
-});
+}).refine((data) => (data.fromAccountId || data.fromAccountNumber) && (data.toAccountId || data.toAccountNumber), {
+  message: 'Source and Destination Account ID or Number are required'
+}).transform((data) => ({
+  ...data,
+  fromAccountId: data.fromAccountId || data.fromAccountNumber,
+  toAccountId: data.toAccountId || data.toAccountNumber
+}));
 
 const createLoanSchema = z.object({
   accountId: z.string().min(1, 'Account ID is required'),

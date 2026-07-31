@@ -43,54 +43,104 @@ model AdminAction {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// Cross-Schema Read/Write References (auth_db, acct_db, txn_db)
+// Cross-Schema Enums & Read/Write References (auth_db, acct_db, txn_db)
 // ═══════════════════════════════════════════════════════════════════
 
+enum Role {
+  CUSTOMER
+  ADMIN
+  OFFICER
+
+  @@schema("auth_db")
+}
+
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+
+  @@schema("auth_db")
+}
+
+enum AccountType {
+  SAVINGS
+  CURRENT
+  BUSINESS
+
+  @@schema("acct_db")
+}
+
+enum AccountStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+
+  @@schema("acct_db")
+}
+
+enum TransactionType {
+  TRANSFER
+  PAYMENT
+  DEPOSIT
+
+  @@schema("txn_db")
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  FLAGGED
+
+  @@schema("txn_db")
+}
+
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  phone          String   @unique
-  nic            String   @unique
-  passwordHash   String   @map("password_hash")
-  role           String   @default("CUSTOMER")
-  kycStatus      String   @default("PENDING") @map("kyc_status")
-  failedAttempts Int      @default(0) @map("failed_attempts")
-  isLocked       Boolean  @default(false) @map("is_locked")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(uuid())
+  email          String    @unique
+  phone          String    @unique
+  nic            String    @unique
+  passwordHash   String    @map("password_hash")
+  role           Role      @default(CUSTOMER)
+  kycStatus      KycStatus @default(PENDING) @map("kyc_status")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  isLocked       Boolean   @default(false) @map("is_locked")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   @@map("users")
   @@schema("auth_db")
 }
 
 model Account {
-  id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  accountNumber String   @unique @map("account_number")
-  accountType   String   @default("SAVINGS") @map("account_type")
-  balance       Decimal  @default(0.00) @db.Decimal(15, 2)
-  currency      String   @default("LKR")
-  status        String   @default("ACTIVE")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  accountNumber String        @unique @map("account_number")
+  accountType   AccountType   @default(SAVINGS) @map("account_type")
+  balance       Decimal       @default(0.00) @db.Decimal(15, 2)
+  currency      String        @default("LKR")
+  status        AccountStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
   @@map("accounts")
   @@schema("acct_db")
 }
 
 model Transaction {
-  id              String   @id @default(uuid())
-  referenceNumber String   @unique @map("reference_number")
-  fromAccountId   String   @map("from_account_id")
-  toAccountId     String   @map("to_account_id")
-  amount          Decimal  @db.Decimal(15, 2)
-  currency        String   @default("LKR")
-  status          String   @default("SUCCESS")
-  type            String   @default("TRANSFER")
+  id              String            @id @default(uuid())
+  userId          String?           @map("user_id")
+  referenceNumber String            @unique @map("reference_number")
+  fromAccountId   String            @map("from_account_id")
+  toAccountId     String            @map("to_account_id")
+  amount          Decimal           @db.Decimal(15, 2)
+  currency        String            @default("LKR")
+  status          TransactionStatus @default(SUCCESS)
+  type            TransactionType   @default(TRANSFER)
   description     String?
-  fraudFlag       Boolean  @default(false) @map("fraud_flag")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  fraudFlag       Boolean           @default(false) @map("fraud_flag")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
 
   @@map("transactions")
   @@schema("txn_db")

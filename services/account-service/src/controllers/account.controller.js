@@ -1,6 +1,8 @@
 const { prisma } = require('../config/db');
 const { logger } = require('../config/logger');
 const { generateAccountNumber, generateReceiptNumber } = require('../utils/accountGenerator');
+const { recordLedgerTransaction } = require('../utils/ledger');
+
 
 // ═══════════════════════════════════════════════════════════════════
 // Account Controller (Create Account, List, Balance Check & ACID Transfers)
@@ -73,10 +75,26 @@ const listAccounts = async (req, res) => {
       });
     }
 
-    const accounts = await prisma.account.findMany({
+    let accounts = await prisma.account.findMany({
       where: { userId: String(userId) },
       orderBy: { createdAt: 'asc' }
     });
+
+    if (accounts.length === 0) {
+      const accountNumber = await generateAccountNumber();
+      const newAccount = await prisma.account.create({
+        data: {
+          userId: String(userId),
+          accountNumber,
+          accountType: 'SAVINGS',
+          balance: 500000.00,
+          currency: 'LKR',
+          status: 'ACTIVE'
+        }
+      });
+      accounts = [newAccount];
+      logger.info('🏦 Auto-provisioned initial savings account for user:', { userId, accountNumber });
+    }
 
     return res.status(200).json({
       success: true,
@@ -297,21 +315,44 @@ const executeTransfer = async (req, res) => {
 };
 
 /**
+/**
  * POST /api/payments/bill
  * Executes utility bill payment by debiting account balance & issuing a UtilityReceipt
  */
 const payBill = async (req, res) => {
   try {
     const userId = getAuthenticatedUserId(req);
-    const { accountId, biller, accountReference, amount } = req.body;
+    const {
+      accountId,
+      accountNumber,
+      biller,
+      billerId,
+      accountReference,
+      amount,
+      referenceNumber
+    } = req.body;
+
+    const targetAccountId = accountId || accountNumber;
+    const targetBiller = biller || billerId || 'CEB';
+    const targetReference = accountReference || accountNumber || 'N/A';
+    const targetRefNumber = referenceNumber || generateReceiptNumber();
     const paymentAmount = Number(amount);
+
+    if (!targetAccountId || isNaN(paymentAmount) || paymentAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid account identifier or payment amount.'
+      });
+    }
+
+    let sourceAccountNumber = null;
 
     const receipt = await prisma.$transaction(async (tx) => {
       const account = await tx.account.findFirst({
         where: {
           OR: [
-            { id: accountId },
-            { accountNumber: accountId }
+            { id: String(targetAccountId) },
+            { accountNumber: String(targetAccountId) }
           ]
         }
       });
@@ -321,6 +362,8 @@ const payBill = async (req, res) => {
         error.code = 'INVALID_ACCOUNT';
         throw error;
       }
+
+      sourceAccountNumber = account.accountNumber;
 
       if (Number(account.balance) < paymentAmount) {
         const error = new Error('Insufficient funds in account for utility bill payment.');
@@ -335,20 +378,32 @@ const payBill = async (req, res) => {
       });
 
       // Generate receipt
-      const receiptNumber = generateReceiptNumber();
       const newReceipt = await tx.utilityReceipt.create({
         data: {
           userId: userId ? String(userId) : account.userId,
           accountId: account.id,
-          biller,
-          accountReference,
+          biller: targetBiller,
+          accountReference: targetReference,
           amount: paymentAmount,
-          receiptNumber,
+          receiptNumber: targetRefNumber,
           status: 'PAID'
         }
       });
 
       return newReceipt;
+    });
+
+    // Automatically record payment in transaction ledger for unified history & fraud check
+    recordLedgerTransaction({
+      userId,
+      fromAccountId: sourceAccountNumber || String(targetAccountId),
+      toAccountId: `${targetBiller}-BILLER`,
+      amount: paymentAmount,
+      currency: 'LKR',
+      type: 'PAYMENT',
+      status: 'SUCCESS',
+      referenceNumber: receipt.receiptNumber,
+      description: `${targetBiller} Utility / Reload Payment (Ref: ${targetReference})`
     });
 
     logger.info('💡 Utility bill payment executed successfully:', {
@@ -359,8 +414,14 @@ const payBill = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `${biller} bill payment of LKR ${paymentAmount.toLocaleString()} completed successfully.`,
-      receipt
+      message: `${targetBiller} payment of LKR ${paymentAmount.toLocaleString()} completed successfully.`,
+      receipt,
+      transaction: {
+        referenceNumber: receipt.receiptNumber,
+        amount: paymentAmount,
+        type: 'PAYMENT',
+        status: 'SUCCESS'
+      }
     });
   } catch (err) {
     logger.warn('Utility bill payment rolled back:', { error: err.message, code: err.code });

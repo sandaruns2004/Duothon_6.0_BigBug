@@ -49,6 +49,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/loans', loanRoutes);
+app.use('/', paymentRoutes);
+app.use('/', loanRoutes);
 app.use('/', accountRoutes);
 
 // 6. 404 Fallback Handler

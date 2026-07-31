@@ -35,7 +35,7 @@ The CD pipeline automates the delivery of our tested code directly to our Azure 
   1. **Build Phase:** Compiles Next.js for the frontend and builds the Docker images for all 5 backend microservices (`auth`, `account`, `transaction`, `notification`, `admin`), the API Gateway, and the PostgreSQL database. It also prepares the `seed-job` image.
   2. **Push Phase:** Pushes the freshly built Docker images to our private Azure Container Registry (ACR).
   3. **Deploy Phase:** Triggers an update across all relevant Azure Container Apps, prompting them to pull the latest images from ACR and perform a rolling restart to achieve zero-downtime deployments.
-  4. **Database Seeding:** Deploys and runs an Azure Container App Job (`seed-job`) to apply Prisma database schemas and seed the initial production records.
+  4. **Database Seeding & JIT Provisioning:** Deploys and runs an Azure Container App Job (`seed-job`) to apply Prisma database schemas and seed the initial production demo records (`810000000001` for Customer 1 and `810000000002` for Customer 2), while relying on the backend **Just-In-Time (JIT) Auto-Provisioning Engine** in `account-service` to dynamically create `500,000.00 LKR` SAVINGS accounts for newly registered users.
 
 ---
 

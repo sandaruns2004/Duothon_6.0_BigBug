@@ -70,6 +70,7 @@ npm run seed:demo
 | **Customer 2** | `customer2@aegisvault.com` | `CustomerSecure2026!` | `CUSTOMER` | Current Account `#810000000002` (`750,000.00 LKR` balance), KYC Verified |
 
 > **💡 Evaluator Pro-Tip:** On the `/login` and `/verify-otp` screens, use the **"Sandbox Demo Credentials"** button for instant one-click autofill! The demo OTP code is always `123456` in testing mode.
+> **⚡ Just-In-Time (JIT) New User Provisioning:** When testing new user signups (`/register`), logging in automatically creates an isolated **SAVINGS** bank account with a unique 12-digit account number and **500,000.00 LKR** starting balance, ensuring zero demo fallbacks or empty account states!
 
 ---
 
@@ -83,8 +84,10 @@ npm run seed:demo
 ### 🏛️ B. Customer Command Center (`/dashboard`)
 - **Account Switcher & Toggleable Balance**: Switch between Savings and Current accounts with a privacy eye toggle (`•••••••• LKR`).
 - **Real-Time Activity Ledger**: Displays recent transactions with status chips and visual **🚨 Fraud Guard Flagged** indicators.
+- **Dynamic Account Resolution**: Seamlessly displays real account numbers (`810000000001`, `810000000002`, or JIT provisioned accounts) without hardcoded fallback masks.
 
 ### 💸 C. ACID Atomic Interbank Transfer (`/transfer`)
+- **Dynamic Account Binding**: Initializes `fromAccount` dynamically from the user's active account number, ensuring clean multi-sandbox transfer execution.
 - **Pre-Execution Confirmation Modal**: Prompts the customer with an ACID transaction summary (recipient, fee breakdown `0.50% > 100k LKR`, total debit amount) before execution.
 - **Printable Success Receipt**: Automatically generates an immutable digital receipt upon transfer completion.
 

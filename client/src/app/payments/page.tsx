@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Landmark, 
@@ -18,6 +18,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PaymentsAndLoansPage() {
   const [activeTab, setActiveTab] = useState<'bills' | 'loans'>('bills');
+  const [userAccountNumber, setUserAccountNumber] = useState('');
+
+  useEffect(() => {
+    accountApi.getAccounts()
+      .then((res) => {
+        if (res.data?.success && Array.isArray(res.data.accounts) && res.data.accounts.length > 0) {
+          const saved = typeof window !== 'undefined' ? localStorage.getItem('aegisvault_selected_account_number') : null;
+          const matched = saved ? res.data.accounts.find((a: { accountNumber: string }) => a.accountNumber === saved) : null;
+          const chosen = matched || res.data.accounts[0];
+          setUserAccountNumber(chosen.accountNumber);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Utility Bill Form State
   const [biller, setBiller] = useState('CEB');
@@ -47,6 +61,45 @@ export default function PaymentsAndLoansPage() {
   const totalRepayment = monthlyEMI * tenorMonths;
   const totalInterest = totalRepayment - loanAmount;
 
+  const BILLER_CONFIGS: Record<string, {
+    label: string;
+    placeholder: string;
+    helperText: string;
+    regex: RegExp;
+    demoAcc: string;
+  }> = {
+    CEB: {
+      label: 'CEB Electricity Contract Number (10 digits)',
+      placeholder: 'e.g. 1089234561',
+      helperText: 'Found on the top-right corner of your Ceylon Electricity Board invoice.',
+      regex: /^\d{10}$/,
+      demoAcc: '1089234561'
+    },
+    NWSDB: {
+      label: 'Water Board Account / Reference No. (10-12 chars)',
+      placeholder: 'e.g. 101-234567-89 or 1029384756',
+      helperText: 'Enter your 10-12 digit Water Board account or hyphenated reference number.',
+      regex: /^[0-9-]{10,14}$/,
+      demoAcc: '101-234567-89'
+    },
+    SLT: {
+      label: 'SLT Telephone / Fiber Number (e.g. 0112345678)',
+      placeholder: 'e.g. 0112345678 (start with area code 0xx)',
+      helperText: 'Enter your 10-digit SLT landline or fiber account number starting with 0.',
+      regex: /^0\d{9}$/,
+      demoAcc: '0112345678'
+    },
+    DIALOG: {
+      label: 'Dialog Mobile / Broadband / TV Number',
+      placeholder: 'e.g. 0771234567 or 0761234567',
+      helperText: 'Enter the 10-digit Dialog mobile, TV, or router number to reload.',
+      regex: /^07\d{8}$/,
+      demoAcc: '0771234567'
+    }
+  };
+
+  const activeBillerConfig = BILLER_CONFIGS[biller] || BILLER_CONFIGS['CEB'];
+
   const handleBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBillError('');
@@ -58,17 +111,26 @@ export default function PaymentsAndLoansPage() {
       return;
     }
 
+    if (!activeBillerConfig.regex.test(accountNumber)) {
+      setBillError(`Invalid format for ${biller}: please check the account/phone number format.`);
+      return;
+    }
+
     setBillLoading(true);
     try {
+      const targetAcc = userAccountNumber || '810000000001';
       const res = await accountApi.payBill({
-        accountNumber: '810023459812',
+        accountId: targetAcc,
+        accountNumber: targetAcc,
+        biller: biller,
         billerId: biller,
+        accountReference: accountNumber,
         amount: amountNum,
-        referenceNumber: `BILL-${Date.now().toString().slice(-6)}`
+        referenceNumber: `BILL-${biller}-${Date.now().toString().slice(-6)}`
       });
 
       if (res.data?.success) {
-        setBillSuccess(`Bill payment of ${amountNum.toFixed(2)} LKR to ${biller} successful! Receipt: ${res.data.transaction?.referenceNumber || 'TXN-BILL-881'}`);
+        setBillSuccess(`Bill/Reload payment of ${amountNum.toFixed(2)} LKR to ${biller} successful! Recorded in Transactions Ledger.`);
         setAccountNumber('');
         setBillAmount('');
       }
@@ -80,6 +142,28 @@ export default function PaymentsAndLoansPage() {
     }
   };
 
+  const handleEmiSimulate = async () => {
+    setLoanError('');
+    setLoanSuccess(null);
+    setLoanLoading(true);
+    try {
+      const targetAcc = userAccountNumber || '810000000001';
+      const res = await accountApi.payInstallment({
+        accountNumber: targetAcc,
+        amount: monthlyEMI
+      });
+      if (res.data?.success) {
+        setLoanSuccess(`EMI Auto-Debit simulation: LKR ${monthlyEMI.toLocaleString()} deducted from Account #${targetAcc}. View in Transactions tab!`);
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { error?: string } } };
+      setLoanError(errorObj.response?.data?.error || 'Failed to execute EMI installment deduction.');
+    } finally {
+      setLoanLoading(false);
+    }
+  };
+
+
   const handleLoanSubmit = async () => {
     setLoanError('');
     setLoanSuccess(null);
@@ -87,7 +171,7 @@ export default function PaymentsAndLoansPage() {
 
     try {
       const res = await accountApi.applyLoan({
-        accountNumber: '810023459812',
+        accountNumber: userAccountNumber || '810000000001',
         amount: loanAmount,
         interestRate,
         tenorMonths,
@@ -103,6 +187,24 @@ export default function PaymentsAndLoansPage() {
     } finally {
       setLoanLoading(false);
     }
+  };
+
+  const handleTabSwitch = (tab: 'bills' | 'loans') => {
+    setActiveTab(tab);
+    setAccountNumber('');
+    setBillAmount('');
+    setBillError('');
+    setBillSuccess(null);
+    setLoanError('');
+    setLoanSuccess(null);
+  };
+
+  const handleBillerSelect = (newBiller: string) => {
+    setBiller(newBiller);
+    setAccountNumber('');
+    setBillAmount('');
+    setBillError('');
+    setBillSuccess(null);
   };
 
   const billers = [
@@ -128,7 +230,7 @@ export default function PaymentsAndLoansPage() {
       {/* Tab Switcher */}
       <div className="flex border-b border-border/80 gap-6">
         <button
-          onClick={() => setActiveTab('bills')}
+          onClick={() => handleTabSwitch('bills')}
           className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
             activeTab === 'bills'
               ? 'border-primary text-primary'
@@ -139,7 +241,7 @@ export default function PaymentsAndLoansPage() {
           <span>Utility Bill Payments</span>
         </button>
         <button
-          onClick={() => setActiveTab('loans')}
+          onClick={() => handleTabSwitch('loans')}
           className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
             activeTab === 'loans'
               ? 'border-emerald-500 text-emerald-400'
@@ -179,7 +281,7 @@ export default function PaymentsAndLoansPage() {
                 <button
                   key={b.id}
                   type="button"
-                  onClick={() => setBiller(b.id)}
+                  onClick={() => handleBillerSelect(b.id)}
                   className={`p-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-2 ${
                     isSelected
                       ? 'bg-primary/15 border-primary shadow-glow-cyan text-white'
@@ -195,18 +297,31 @@ export default function PaymentsAndLoansPage() {
 
           <form onSubmit={handleBillSubmit} className="space-y-4 pt-4 border-t border-border/60">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">
-                Biller Account / Contract Number
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                  {activeBillerConfig.label}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setAccountNumber(activeBillerConfig.demoAcc)}
+                  className="text-[11px] text-primary hover:underline font-mono"
+                >
+                  ⚡ Auto-Fill Demo No.
+                </button>
+              </div>
               <input
                 type="text"
                 required
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder="e.g. 1029384756"
+                placeholder={activeBillerConfig.placeholder}
                 className="input-field font-mono text-sm"
               />
+              <p className="text-xs text-gray-400 mt-1.5">
+                {activeBillerConfig.helperText}
+              </p>
             </div>
+
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-1.5">
@@ -356,14 +471,24 @@ export default function PaymentsAndLoansPage() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleLoanSubmit}
-                disabled={loanLoading}
-                className="w-full btn-accent py-3 font-semibold text-sm"
-              >
-                {loanLoading ? 'Submitting Application...' : 'Apply for Financing Now'}
-              </button>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={handleLoanSubmit}
+                  disabled={loanLoading}
+                  className="w-full btn-accent py-3 font-semibold text-sm"
+                >
+                  {loanLoading ? 'Submitting Application...' : 'Apply for Financing Now (+ Credit)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEmiSimulate}
+                  disabled={loanLoading}
+                  className="w-full py-2.5 rounded-xl border border-warning/40 bg-warning/10 hover:bg-warning/20 text-warning text-xs font-semibold transition-colors"
+                >
+                  Simulate EMI Auto-Debit (- Cut for Loan)
+                </button>
+              </div>
             </div>
           </div>
         </div>

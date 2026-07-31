@@ -44,6 +44,9 @@ export const clearTokens = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('aegisvault_selected_account_number');
+    localStorage.removeItem('tempUserId');
+    localStorage.removeItem('tempEmail');
   }
 };
 
@@ -150,19 +153,22 @@ export const authApi = {
   register: (data: Record<string, unknown>) => api.post('/api/auth/register', data),
   login: (data: Record<string, unknown>) => api.post('/api/auth/login', data),
   verifyOtp: (data: Record<string, unknown>) => api.post('/api/auth/verify-otp', data),
-  getMe: () => api.get('/api/auth/me'),
+  getMe: () => api.get('/api/users/profile'),
   logout: () => api.post('/api/auth/logout'),
 };
 
 export const accountApi = {
   getAccounts: () => api.get('/api/accounts'),
   getBalance: (id: string) => api.get(`/api/accounts/${id}/balance`),
-  executeTransfer: (data: Record<string, unknown>) => api.post('/api/accounts/execute-transfer', data),
+  executeTransfer: (data: Record<string, unknown>) => api.post('/api/transactions/transfer', data),
   payBill: (data: Record<string, unknown>) => api.post('/api/payments/bill', data),
   applyLoan: (data: Record<string, unknown>) => api.post('/api/loans/apply', data),
+  payInstallment: (data: Record<string, unknown>) => api.post('/api/loans/pay', data),
 };
 
+
 export const txnApi = {
+  transfer: (data: Record<string, unknown>) => api.post('/api/transactions/transfer', data),
   getTransactions: (params?: Record<string, unknown>) => api.get('/api/transactions', { params }),
   getTransactionById: (id: string) => api.get(`/api/transactions/${id}`),
 };

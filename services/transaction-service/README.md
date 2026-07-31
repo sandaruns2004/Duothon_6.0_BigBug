@@ -19,6 +19,8 @@ The Transaction Service runs on **Port 3003** and handles digital banking fund t
    - Dispatches non-blocking notifications (`POST /internal/notify`) and audit logs (`POST /internal/audit`) to Notification Service (`http://notification-service:3004`).
 5. **Verifiable Transaction Receipts**:
    - Generates formatted digital receipts (`RCP-<REFERENCE>`) suitable for download or audit compliance.
+6. **Dynamic User & Sandbox Account Resolution**:
+   - Transfers dynamically bind to the logged-in user's active account (`fromAccount`), supporting clean multi-sandbox testing across **Customer 1 (`810000000001`)**, **Customer 2 (`810000000002`)**, and newly registered JIT auto-provisioned accounts.
 
 ## Endpoints Summary
 
