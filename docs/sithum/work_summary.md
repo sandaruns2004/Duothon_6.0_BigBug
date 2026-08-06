@@ -47,3 +47,38 @@ In the Continuous Deployment (`cd.yml`) pipeline, the PostgreSQL database connec
 
 **Our Solution:** 
 We updated all database connection strings in the `cd.yml` file to use `sslmode=require`. This ensures that all communication between our containerized microservices and the PostgreSQL database is fully encrypted in transit.
+
+## 7. Added Vulnerability Scanning to CI Pipeline
+**The Issue:** 
+The automated GitHub Actions CI pipeline installed dependencies without checking for known security vulnerabilities (using the `--no-audit` flag). This meant we could unknowingly deploy code with compromised or vulnerable packages.
+
+**Our Solution:** 
+We added a dedicated `npm audit --audit-level=high` step to the CI pipeline (`ci.yml`). If any high-severity vulnerabilities are found in our Node.js dependencies during a build, the pipeline will log them, allowing developers to catch supply chain attacks early.
+
+## 8. Implemented Request Correlation IDs for Distributed Tracing
+**The Issue:** 
+In a microservices architecture, debugging errors is difficult because a single user request often travels across multiple services (e.g., Gateway -> Transaction Service -> Account Service). Without a unique identifier, it's impossible to trace a single request's journey through the logs.
+
+**Our Solution:** 
+We updated the API Gateway (`index.js`) to generate a unique `x-request-id` (UUID) for every incoming request. This ID is attached to the request headers and passed downstream to all other microservices, making log correlation and debugging seamless.
+
+## 9. Added OTP Brute-Force Rate Limiting
+**The Issue:** 
+The MFA (OTP) verification endpoint didn't limit the number of attempts a user could make. A malicious actor could repeatedly guess the 6-digit OTP until they got it right, bypassing the Multi-Factor Authentication.
+
+**Our Solution:** 
+We implemented a strict 5-attempt limit in `auth.controller.js`. We use Redis to track failed attempts using a `mfa_attempts` key. Once 5 incorrect attempts are made, the OTP is completely destroyed from Redis, and the user must request a new one, stopping brute-force attacks in their tracks.
+
+## 10. Restricted Internal Endpoints at the API Gateway
+**The Issue:** 
+Several microservices had internal-only endpoints (like `/api/loans/internal/pending`) designed to be called only by other microservices. However, the API Gateway was blindly proxying *all* requests, meaning an external user could access these internal endpoints if they knew the URL.
+
+**Our Solution:** 
+We added a security middleware in the API Gateway (`index.js`) that intercepts all requests. If the requested path contains `/internal`, the Gateway immediately blocks it with a `403 Forbidden` error, ensuring these endpoints are strictly reserved for inter-service communication.
+
+## 11. Enforced Strict Zod Input Validation on Financial Endpoints
+**The Issue:** 
+While some endpoints used proper Zod validation schemas, critical financial endpoints (like account debit and credit) relied on weak, ad-hoc checks (like `isNaN`). This could lead to edge-case exploitation if a user sent unexpected JSON structures.
+
+**Our Solution:** 
+We created robust Zod validation schemas (e.g., `debitCreditSchema`) in the account service's `validation.js` and applied them as middleware in `account.routes.js`. This guarantees that all incoming requests strictly adhere to the expected format and types before any business logic is executed.
