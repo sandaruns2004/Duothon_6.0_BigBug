@@ -16,7 +16,9 @@ const redisClient = new Redis(redisUrl, {
   },
   maxRetriesPerRequest: 1,
   enableOfflineQueue: false,
-  lazyConnect: true
+  lazyConnect: true,
+  keepAlive: 30000,
+  connectTimeout: 10000
 });
 
 redisClient.on('connect', () => {
