@@ -24,16 +24,31 @@ jobs:
         id: filter
         with:
           filters: |
-            auth-service: 'services/auth-service/**'
-            account-service: 'services/account-service/**'
-            transaction-service: 'services/transaction-service/**'
-            notification-service: 'services/notification-service/**'
-            admin-service: 'services/admin-service/**'
-            api-gateway: 'services/api-gateway/**'
-            client: 'client/**'
+            auth-service: 
+              - 'services/auth-service/**'
+              - '.github/workflows/cd.yml'
+            account-service: 
+              - 'services/account-service/**'
+              - '.github/workflows/cd.yml'
+            transaction-service: 
+              - 'services/transaction-service/**'
+              - '.github/workflows/cd.yml'
+            notification-service: 
+              - 'services/notification-service/**'
+              - '.github/workflows/cd.yml'
+            admin-service: 
+              - 'services/admin-service/**'
+              - '.github/workflows/cd.yml'
+            api-gateway: 
+              - 'services/api-gateway/**'
+              - '.github/workflows/cd.yml'
+            client: 
+              - 'client/**'
+              - '.github/workflows/cd.yml'
             postgres: 
               - 'databases/postgres/**'
               - 'scripts/init-schemas.sql'
+              - '.github/workflows/cd.yml'
             seed-job:
               - '**'
 
