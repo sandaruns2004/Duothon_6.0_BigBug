@@ -682,7 +682,9 @@ module.exports = {
   payInstallment,
   generateAmortizationSchedule,
   approveLoan,
+  rejectLoan,
   getInternalPendingLoans,
-  approveInternalLoan: approveLoan
+  approveInternalLoan: approveLoan,
+  rejectInternalLoan: rejectLoan
 };
 
