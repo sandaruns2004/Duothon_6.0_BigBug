@@ -141,7 +141,7 @@ export default function Navbar() {
             <>
               {/* Notification Bell */}
               <Link
-                href="/profile"
+                href={userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' ? '/admin?tab=security_logs' : '/profile'}
                 className="relative p-2 rounded-lg bg-surface-card border border-border/60 hover:border-primary/50 transition-colors"
                 title="Security Notifications"
               >
