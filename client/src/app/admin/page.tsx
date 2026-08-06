@@ -98,7 +98,7 @@ interface DailyReportItem {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'users' | 'fraud' | 'audit' | 'loans' | 'transactions'>('users');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'fraud' | 'audit' | 'loans' | 'transactions' | 'security_logs'>('overview');
   const [loading, setLoading] = useState(true);
   const [loans, setLoans] = useState<LoanItem[]>([]);
   const [selectedKycUser, setSelectedKycUser] = useState<UserItem | null>(null);
@@ -206,8 +206,10 @@ export default function AdminDashboardPage() {
   };
 
   const handleRejectLoan = async (id: string) => {
+    const reason = window.prompt("Enter reason for rejecting this loan:", "Rejected by Admin after credit risk evaluation");
+    if (reason === null) return;
     try {
-      await adminApi.rejectLoan(id, 'Rejected by Admin after credit risk evaluation');
+      await adminApi.rejectLoan(id, reason);
       setLoans((prev) =>
         prev.map((l) => (l.id === id ? { ...l, status: 'REJECTED' } : l))
       );
@@ -328,6 +330,18 @@ export default function AdminDashboardPage() {
       {/* Tabs */}
       <div className="flex flex-wrap border-b border-border/80 gap-6">
         <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'overview'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>Overview</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('users')}
           className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
             activeTab === 'users'
@@ -386,8 +400,22 @@ export default function AdminDashboardPage() {
           <Activity className="w-4 h-4" />
           <span>All Transactions ({transactions.length})</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('security_logs')}
+          className={`pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'security_logs'
+              ? 'border-warning text-warning'
+              : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>Security Logs</span>
+        </button>
       </div>
 
+      {activeTab === 'overview' && (
+        <div className="space-y-6 mt-6">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="glass-card p-5 rounded-xl border-border/80">
@@ -502,6 +530,55 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+        </div>
+      )}
+
+      {/* Security Logs Tab */}
+      {activeTab === 'security_logs' && (
+        <div className="glass-card p-6 rounded-2xl border-warning/40 shadow-glass space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-warning" />
+              <span>Security Alerts & Important Logs</span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/60 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Resource / User ID</th>
+                  <th className="py-3 px-4">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40 text-sm font-mono">
+                {auditLogs
+                  .filter((log) => ['USER_LOGIN', 'LOGIN_FAILED', 'SUSPEND_USER', 'UNLOCK_USER', 'VERIFY_USER_KYC', 'REJECT_USER_KYC', 'APPROVE_LOAN', 'REJECT_LOAN', 'TRANSFER', 'PAYMENT'].includes(log.action))
+                  .map((log) => (
+                  <tr key={log.id} className="hover:bg-surface-card/60 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-white">
+                      {log.action}
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-300">
+                      {log.resource} / {log.userId}
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-400 font-sans">
+                      {new Date(log.createdAt).toLocaleTimeString()}
+                    </td>
+                  </tr>
+                ))}
+                {auditLogs.filter((log) => ['USER_LOGIN', 'LOGIN_FAILED', 'SUSPEND_USER', 'UNLOCK_USER', 'VERIFY_USER_KYC', 'REJECT_USER_KYC', 'APPROVE_LOAN', 'REJECT_LOAN', 'TRANSFER', 'PAYMENT'].includes(log.action)).length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-sm text-gray-500">
+                      No security logs found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
 
       {/* Tab 1: Users */}
