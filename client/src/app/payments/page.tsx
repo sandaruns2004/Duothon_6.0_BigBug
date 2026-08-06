@@ -23,6 +23,15 @@ import Link from 'next/link';
 
 export default function PaymentsAndLoansPage() {
   const [activeTab, setActiveTab] = useState<'bills' | 'loans'>('bills');
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'loans') {
+        setActiveTab('loans');
+      }
+    }
+  }, []);
   const [userAccountNumber, setUserAccountNumber] = useState('');
   const [kycStatus, setKycStatus] = useState<string>('UNVERIFIED');
   const [kycLoading, setKycLoading] = useState<boolean>(true);
@@ -41,7 +50,9 @@ export default function PaymentsAndLoansPage() {
 
     authApi.getMe()
       .then((res) => {
-        if (res.data?.success && res.data.user?.kycStatus) {
+        if (res.data?.success && res.data.profile?.kycStatus) {
+          setKycStatus(res.data.profile.kycStatus);
+        } else if (res.data?.success && res.data.user?.kycStatus) {
           setKycStatus(res.data.user.kycStatus);
         }
       })

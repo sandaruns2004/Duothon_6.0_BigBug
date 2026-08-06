@@ -99,6 +99,16 @@ interface DailyReportItem {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'fraud' | 'audit' | 'loans' | 'transactions' | 'security_logs'>('overview');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'security_logs' || tab === 'loans' || tab === 'users') {
+        setActiveTab(tab as any);
+      }
+    }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [loans, setLoans] = useState<LoanItem[]>([]);
   const [selectedKycUser, setSelectedKycUser] = useState<UserItem | null>(null);

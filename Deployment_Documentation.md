@@ -14,6 +14,7 @@ Our platform is containerized using Docker, guaranteeing that it behaves exactly
 
 ### Containerization Proof
 
+
 ![Local Docker Containers](./public/screenshots/local%20docker%20containers.png)
 *Figure 1: Proof of local environment parity showing our core microservices running seamlessly in Docker Desktop.*
 
@@ -24,6 +25,7 @@ Our platform is containerized using Docker, guaranteeing that it behaves exactly
 We have fully automated our release process. Changes merged to the main branch automatically trigger our GitHub Actions CI/CD pipelines, which build the Docker images, run tests, and deploy directly to Azure.
 
 ### CI/CD Pipeline Execution
+
 
 ![GitHub Actions Pipeline Checks](./public/screenshots/github%20actions%20pipeline%20checks.png)
 *Figure 2: Comprehensive pipeline checks ensuring code quality, running tests, and preparing artifacts before deployment.*
@@ -39,6 +41,7 @@ We utilize automated GitHub workflows and structured resource groups in Azure to
 
 ### Infrastructure Provisioning
 
+
 ![Azure Resource Groups & Containers](./public/screenshots/azure%20resource%20groups%20&%20containers.png)
 *Figure 4: Automated cloud infrastructure showcasing active resource groups and container apps deployed in Azure.*
 
@@ -50,6 +53,7 @@ Our architecture is designed to handle varying loads seamlessly. By deploying in
 
 ### Scaling and Availability Configurations
 
+
 ![API Gateway Azure Info](./public/screenshots/api%20gateway%20info%20azure.png)
 *Figure 5: API Gateway scaling and availability overview, detailing ingress routing and instance allocation rules.*
 
@@ -60,6 +64,7 @@ Our architecture is designed to handle varying loads seamlessly. By deploying in
 We maintain strict visibility into our system's health, ensuring that incidents are detected through logs and metrics long before customers notice them.
 
 ### Monitoring and Logging Dashboards
+
 
 ![Grafana API Gateway Dashboards](./public/screenshots/api%20gateway%20dashboards%20with%20graffana.png)
 *Figure 6: Real-time Grafana monitoring dashboard tracking API Gateway request rates, latencies, and active connections.*
@@ -78,6 +83,7 @@ Security is maintained throughout the delivery process. All sensitive data (API 
 
 ### Secret Management & Network Security
 
+
 ![GitHub Secrets & Variables](./public/screenshots/github%20secrets%20&%20variables.png)
 *Figure 9: Strict secret management separating sensitive credentials and environment configurations from source code.*
 
@@ -88,6 +94,7 @@ Security is maintained throughout the delivery process. All sensitive data (API 
 The banking platform is fully operational, publicly accessible, and successfully serving traffic in production.
 
 ### Live Production Web App
+
 
 **Client Dashboard:**
 ![Application Client Dashboard](./public/screenshots/application%20client%20dashboard.png)
