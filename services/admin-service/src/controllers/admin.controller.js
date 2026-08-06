@@ -521,9 +521,10 @@ const approveLoan = async (req, res) => {
     return res.status(200).json(response.data);
   } catch (err) {
     logger.error('Approve loan error:', { error: err.message, stack: err.stack });
-    return res.status(500).json({
+    const statusCode = err.response ? err.response.status : 500;
+    return res.status(statusCode).json({
       success: false,
-      error: 'Failed to approve loan.'
+      error: err.response?.data?.error || 'Failed to approve loan.'
     });
   }
 };
@@ -541,9 +542,10 @@ const rejectLoan = async (req, res) => {
     return res.status(200).json(response.data);
   } catch (err) {
     logger.error('Reject loan error:', { error: err.message, stack: err.stack });
-    return res.status(500).json({
+    const statusCode = err.response ? err.response.status : 500;
+    return res.status(statusCode).json({
       success: false,
-      error: 'Failed to reject loan.'
+      error: err.response?.data?.error || 'Failed to reject loan.'
     });
   }
 };
