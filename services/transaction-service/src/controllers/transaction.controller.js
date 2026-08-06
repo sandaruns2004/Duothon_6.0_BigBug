@@ -297,6 +297,8 @@ const listTransactions = async (req, res) => {
 const getTransaction = async (req, res) => {
   try {
     const identifier = req.params.id;
+    const userId = req.headers['x-user-id'];
+    const userRole = req.headers['x-user-role'];
 
     const transaction = await prisma.transaction.findFirst({
       where: {
@@ -315,6 +317,10 @@ const getTransaction = async (req, res) => {
         success: false,
         error: `Transaction not found: ${identifier}`
       });
+    }
+
+    if (userRole !== 'ADMIN' && transaction.fromUserId !== userId && transaction.toUserId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied.' });
     }
 
     return res.status(200).json({

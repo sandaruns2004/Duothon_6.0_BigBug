@@ -83,10 +83,8 @@ const applyLoan = async (req, res) => {
 
     // Enforce KYC verification prerequisite with informative error message
     try {
-      const userRows = await prisma.$queryRawUnsafe(
-        "SELECT kyc_status FROM auth_db.users WHERE id = $1",
-        String(userId)
-      );
+      const userRows = await prisma.$queryRaw`SELECT kyc_status FROM auth_db.users WHERE id = ${String(userId)}`;
+      
       if (userRows && userRows.length > 0) {
         const kycStatus = userRows[0].kyc_status;
         if (kycStatus !== 'VERIFIED') {

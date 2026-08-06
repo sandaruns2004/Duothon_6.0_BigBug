@@ -118,6 +118,8 @@ const listAccounts = async (req, res) => {
 const getBalance = async (req, res) => {
   try {
     const accountIdentifier = req.params.id;
+    const userId = req.headers['x-user-id'];
+    const userRole = req.headers['x-user-role'];
 
     const account = await prisma.account.findFirst({
       where: {
@@ -133,6 +135,10 @@ const getBalance = async (req, res) => {
         success: false,
         error: `Account not found: ${accountIdentifier}`
       });
+    }
+
+    if (userRole !== 'ADMIN' && account.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Access denied. You do not own this account.' });
     }
 
     return res.status(200).json({
@@ -161,6 +167,8 @@ const getBalance = async (req, res) => {
 const executeTransfer = async (req, res) => {
   try {
     const { fromAccountId, toAccountId, amount, currency, referenceNumber } = req.body;
+    const userId = req.headers['x-user-id'];
+    const userRole = req.headers['x-user-role'];
 
     const transferAmount = Number(amount);
     if (isNaN(transferAmount) || transferAmount <= 0) {
@@ -185,6 +193,12 @@ const executeTransfer = async (req, res) => {
       if (!sender) {
         const error = new Error('Source account does not exist.');
         error.code = 'SENDER_NOT_FOUND';
+        throw error;
+      }
+
+      if (userRole !== 'ADMIN' && sender.userId !== userId) {
+        const error = new Error('Access denied. You do not own the source account.');
+        error.code = 'UNAUTHORIZED';
         throw error;
       }
 
@@ -468,6 +482,8 @@ const debitAccount = async (req, res) => {
   try {
     const { accountId, amount, description, referenceNumber } = req.body;
     const debitAmount = Number(amount);
+    const userId = req.headers['x-user-id'];
+    const userRole = req.headers['x-user-role'];
 
     if (isNaN(debitAmount) || debitAmount <= 0) {
       return res.status(400).json({ success: false, error: 'Debit amount must be a positive number.' });
@@ -486,6 +502,12 @@ const debitAccount = async (req, res) => {
       if (!account || account.status !== 'ACTIVE') {
         const error = new Error('Account not found or inactive.');
         error.code = 'INVALID_ACCOUNT';
+        throw error;
+      }
+
+      if (userRole !== 'ADMIN' && account.userId !== userId) {
+        const error = new Error('Access denied. You do not own this account.');
+        error.code = 'UNAUTHORIZED';
         throw error;
       }
 
@@ -544,6 +566,8 @@ const creditAccount = async (req, res) => {
   try {
     const { accountId, amount, description, referenceNumber } = req.body;
     const creditAmount = Number(amount);
+    const userId = req.headers['x-user-id'];
+    const userRole = req.headers['x-user-role'];
 
     if (isNaN(creditAmount) || creditAmount <= 0) {
       return res.status(400).json({ success: false, error: 'Credit amount must be a positive number.' });
@@ -562,6 +586,12 @@ const creditAccount = async (req, res) => {
       if (!account || account.status !== 'ACTIVE') {
         const error = new Error('Account not found or inactive.');
         error.code = 'INVALID_ACCOUNT';
+        throw error;
+      }
+
+      if (userRole !== 'ADMIN' && account.userId !== userId) {
+        const error = new Error('Access denied. You do not own this account.');
+        error.code = 'UNAUTHORIZED';
         throw error;
       }
 

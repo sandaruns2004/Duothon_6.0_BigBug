@@ -6,12 +6,12 @@ This task list is based on the Priority Action Matrix from the `security_audit_r
 
 - [x] **1. Add RBAC middleware to all backend services** (Gateway + Service Level Validation)
 - [x] **2. Hardcode `role: 'CUSTOMER'` on registration** (Prevent privilege escalation in `auth.controller.js`)
-- [ ] **3. Add account ownership checks** (Block IDOR attacks in `account-service` and `transaction-service`)
+- [x] **3. Add account ownership checks** (Block IDOR attacks in `account-service` and `transaction-service`)
 - [ ] **4. Gate demo OTP bypass behind `NODE_ENV`** (Prevent bypass in prod in `auth.controller.js`)
 - [ ] **5. Remove hardcoded secret fallbacks** (Remove JWT and DB password fallbacks in `cd.yml` and `jwtAuth.js`)
-- [ ] **6. Set `CORS_ORIGIN` to actual domain** (API gateway env config)
-- [ ] **7. Fix `$queryRawUnsafe` usage** (Remove SQL injection flag in `loan.controller.js`)
-- [ ] **8. Enable `sslmode=require` on DB connections** (Update `cd.yml` env vars)
+- [x] **6. Set `CORS_ORIGIN` to actual domain** (API gateway env config)
+- [x] **7. Fix `$queryRawUnsafe` usage** (Remove SQL injection flag in `loan.controller.js`)
+- [x] **8. Enable `sslmode=require` on DB connections** (Update `cd.yml` env vars)
 
 ## Phase 2 — Strengthen (Medium Impact, Moderate Effort)
 
