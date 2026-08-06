@@ -195,7 +195,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"admin-service"* ]]; then
-            az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=admin_db" AUTH_SERVICE_URL="$AUTH_URL" TRANSACTION_SERVICE_URL="$TX_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" RABBITMQ_URL="$RABBITMQ_URL" &
+            az containerapp update --name admin-service --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/admin-service:${{ github.sha }} --set-env-vars DATABASE_URL="${DB_BASE}&schema=admin_db" AUTH_SERVICE_URL="$AUTH_URL" ACCOUNT_SERVICE_URL="$ACCT_URL" TRANSACTION_SERVICE_URL="$TX_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" RABBITMQ_URL="$RABBITMQ_URL" &
           fi
           
           if [[ "$MODIFIED" == *"api-gateway"* ]]; then

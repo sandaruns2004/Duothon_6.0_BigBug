@@ -84,7 +84,8 @@ const getDashboard = async (req, res) => {
 const listUsers = async (req, res) => {
   try {
     const queryStr = new URLSearchParams(req.query).toString();
-    const response = await axios.get(`http://auth-service:3001/api/users/internal?${queryStr}`);
+    const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+    const response = await axios.get(`${AUTH_URL}/api/users/internal?${queryStr}`);
     return res.status(200).json(response.data);
   } catch (err) {
     logger.error('List users error:', { error: err.message, stack: err.stack });
@@ -165,7 +166,8 @@ const verifyUserKyc = async (req, res) => {
     const { id } = req.params;
     const { reason = 'KYC document verification approved by administrative officer' } = req.body;
 
-    const response = await axios.put(`http://auth-service:3001/api/users/internal/${id}/kyc-verify`);
+    const AUTH_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+    const response = await axios.put(`${AUTH_URL}/api/users/internal/${id}/kyc-verify`);
     const updatedUser = response.data.user;
 
     // Record Admin Action
@@ -495,7 +497,8 @@ const getDailyReports = async (req, res) => {
  */
 const listLoans = async (req, res) => {
   try {
-    const response = await axios.get('http://account-service:3002/api/loans/internal/pending');
+    const ACCOUNT_URL = process.env.ACCOUNT_SERVICE_URL || 'http://account-service:3002';
+    const response = await axios.get(`${ACCOUNT_URL}/api/loans/internal/pending`);
     return res.status(200).json(response.data);
   } catch (err) {
     logger.error('List loans error:', { error: err.message, stack: err.stack });
@@ -513,7 +516,8 @@ const listLoans = async (req, res) => {
 const approveLoan = async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await axios.put(`http://account-service:3002/api/loans/internal/${id}/approve`);
+    const ACCOUNT_URL = process.env.ACCOUNT_SERVICE_URL || 'http://account-service:3002';
+    const response = await axios.put(`${ACCOUNT_URL}/api/loans/internal/${id}/approve`);
     return res.status(200).json(response.data);
   } catch (err) {
     logger.error('Approve loan error:', { error: err.message, stack: err.stack });
