@@ -20,5 +20,6 @@ router.get('/transactions', adminController.listTransactions);
 router.get('/reports/daily', adminController.getDailyReports);
 router.get('/loans', adminController.listLoans);
 router.put('/loans/:id/approve', adminController.approveLoan);
+router.put('/loans/:id/reject', adminController.rejectLoan);
 
 module.exports = router;

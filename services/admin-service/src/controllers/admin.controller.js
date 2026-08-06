@@ -528,6 +528,26 @@ const approveLoan = async (req, res) => {
   }
 };
 
+/**
+ * PUT /api/admin/loans/:id/reject
+ * Reject a pending loan
+ */
+const rejectLoan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason = 'Rejected by Admin' } = req.body;
+    const ACCOUNT_URL = process.env.ACCOUNT_SERVICE_URL || 'http://account-service:3002';
+    const response = await axios.put(`${ACCOUNT_URL}/api/loans/internal/${id}/reject`, { reason });
+    return res.status(200).json(response.data);
+  } catch (err) {
+    logger.error('Reject loan error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to reject loan.'
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   listUsers,
@@ -539,5 +559,6 @@ module.exports = {
   listTransactions,
   getDailyReports,
   listLoans,
-  approveLoan
+  approveLoan,
+  rejectLoan
 };
