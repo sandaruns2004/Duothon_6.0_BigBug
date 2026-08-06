@@ -59,7 +59,7 @@ const register = async (req, res) => {
         phone,
         nic,
         passwordHash,
-        role: role || 'CUSTOMER',
+        role: 'CUSTOMER',
         kycStatus: 'PENDING',
         failedAttempts: 0,
         isLocked: false

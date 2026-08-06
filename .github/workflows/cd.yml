@@ -122,6 +122,7 @@ jobs:
           NOTIF_URL="https://$(az containerapp show -n notification-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           ADMIN_URL="https://$(az containerapp show -n admin-service -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           API_GW_URL="https://$(az containerapp show -n api-gateway -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
+          CLIENT_URL="https://$(az containerapp show -n client -g ${{ env.RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn -o tsv | tr -d '\r\n')"
           
           echo "PG_FQDN=$PG_FQDN" >> $GITHUB_ENV
           echo "REDIS_FQDN=$REDIS_FQDN" >> $GITHUB_ENV
@@ -132,6 +133,7 @@ jobs:
           echo "NOTIF_URL=$NOTIF_URL" >> $GITHUB_ENV
           echo "ADMIN_URL=$ADMIN_URL" >> $GITHUB_ENV
           echo "API_GW_URL=$API_GW_URL" >> $GITHUB_ENV
+          echo "CLIENT_URL=$CLIENT_URL" >> $GITHUB_ENV
           
           echo "Internal service URLs fetched successfully."
 
@@ -144,7 +146,7 @@ jobs:
           
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=require"
           
           SMTP_HOST="${{ secrets.SMTP_HOST }}"
           if [ -z "$SMTP_HOST" ]; then SMTP_HOST="smtp.mailtrap.io"; fi
@@ -199,7 +201,7 @@ jobs:
           fi
           
           if [[ "$MODIFIED" == *"api-gateway"* ]]; then
-            az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} --set-env-vars JWT_SECRET="$JWT_SECRET" REDIS_URL="$REDIS_URL" AUTH_SERVICE_URL="$AUTH_URL" ACCOUNT_SERVICE_URL="$ACCT_URL" TRANSACTION_SERVICE_URL="$TX_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" ADMIN_SERVICE_URL="$ADMIN_URL" &
+            az containerapp update --name api-gateway --resource-group ${{ env.RESOURCE_GROUP }} --image ${{ env.REGISTRY_LOGIN_SERVER }}/api-gateway:${{ github.sha }} --set-env-vars CORS_ORIGIN="$CLIENT_URL" JWT_SECRET="$JWT_SECRET" REDIS_URL="$REDIS_URL" AUTH_SERVICE_URL="$AUTH_URL" ACCOUNT_SERVICE_URL="$ACCT_URL" TRANSACTION_SERVICE_URL="$TX_URL" NOTIFICATION_SERVICE_URL="$NOTIF_URL" ADMIN_SERVICE_URL="$ADMIN_URL" &
           fi
           
           if [[ "$MODIFIED" == *"client"* ]]; then
@@ -214,7 +216,7 @@ jobs:
         run: |
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
           if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=require"
           
           echo "🌱 Creating Seed Job in Azure Container Apps..."
           
