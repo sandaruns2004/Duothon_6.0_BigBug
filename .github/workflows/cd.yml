@@ -142,26 +142,19 @@ jobs:
           MODIFIED: ${{ needs.changes.outputs.modified }}
         run: |
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          if [ -z "$JWT_SECRET" ]; then JWT_SECRET="aegisvault-super-secret-jwt-key-2026"; fi
           
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=require"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
           
           SMTP_HOST="${{ secrets.SMTP_HOST }}"
-          if [ -z "$SMTP_HOST" ]; then SMTP_HOST="smtp.mailtrap.io"; fi
 
           SMTP_PORT="${{ secrets.SMTP_PORT }}"
-          if [ -z "$SMTP_PORT" ]; then SMTP_PORT="2525"; fi
 
           SMTP_FROM="${{ secrets.SMTP_FROM }}"
-          if [ -z "$SMTP_FROM" ]; then SMTP_FROM="noreply@aegisvault.com"; fi
 
           SMTP_USERNAME="${{ secrets.SMTP_USERNAME }}"
-          if [ -z "$SMTP_USERNAME" ]; then SMTP_USERNAME="user"; fi
           
           SMTP_PASSWORD="${{ secrets.SMTP_PASSWORD }}"
-          if [ -z "$SMTP_PASSWORD" ]; then SMTP_PASSWORD="pass"; fi
 
           REDIS_URL="redis://redis:6379"
           RABBITMQ_URL="amqp://guest:guest@rabbitmq:5672"
@@ -215,8 +208,7 @@ jobs:
       - name: Deploy Seed Job
         run: |
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          if [ -z "$DB_PASSWORD" ]; then DB_PASSWORD="securep%40ss123"; fi
-          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=require"
+          DB_BASE="postgresql://aegis_admin:${DB_PASSWORD}@postgres:5432/aegisvault?sslmode=disable"
           
           echo "🌱 Creating Seed Job in Azure Container Apps..."
           
