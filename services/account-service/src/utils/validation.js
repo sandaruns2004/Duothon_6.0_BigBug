@@ -76,6 +76,13 @@ const billPaymentSchema = z.object({
   amount: z.union([z.number().positive(), z.string()])
 });
 
+const debitCreditSchema = z.object({
+  accountId: z.string().min(1, 'Account ID is required'),
+  amount: z.union([z.number().positive(), z.string()]),
+  description: z.string().optional(),
+  referenceNumber: z.string().optional()
+});
+
 const validate = (schema) => (req, res, next) => {
   try {
     const parsed = schema.parse(req.body);
@@ -103,5 +110,6 @@ module.exports = {
   createLoanSchema,
   calculateLoanSchema,
   billPaymentSchema,
+  debitCreditSchema,
   validate
 };

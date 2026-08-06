@@ -59,7 +59,7 @@ const register = async (req, res) => {
         phone,
         nic,
         passwordHash,
-        role: role || 'CUSTOMER',
+        role: 'CUSTOMER',
         kycStatus: 'PENDING',
         failedAttempts: 0,
         isLocked: false
@@ -270,16 +270,26 @@ const verifyOtp = async (req, res) => {
     const isOtpValid = isDemoBypass || verifyOtpHash(otp, cachedHash);
 
     if (!isOtpValid) {
-      logger.warn('Invalid MFA OTP attempt:', { userId: user.id, email: user.email });
+      const attemptsKey = `mfa_attempts:${user.id}`;
+      const attempts = await redisClient.incr(attemptsKey);
+      if (attempts === 1) await redisClient.expire(attemptsKey, 300); // 5 min TTL
+      
+      if (attempts >= 5) {
+        await redisClient.del(redisKey); // Invalid OTP entirely
+        return res.status(429).json({ success: false, error: 'Maximum MFA attempts exceeded. Please request a new OTP.' });
+      }
+
+      logger.warn('Invalid MFA OTP attempt:', { userId: user.id, email: user.email, attempts });
       return res.status(400).json({
         success: false,
-        error: 'Invalid MFA verification code. Please check your email and try again.'
+        error: `Invalid MFA verification code. You have ${5 - attempts} attempts remaining.`
       });
     }
 
     // OTP verified: Clean up OTP from Redis
     try {
       await redisClient.del(redisKey);
+      await redisClient.del(`mfa_attempts:${user.id}`);
     } catch (e) {
       // ignore del error
     }
@@ -346,6 +356,76 @@ const verifyOtp = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to verify OTP. Please try again later.'
+    });
+  }
+};
+
+/**
+ * POST /api/auth/resend-otp
+ * Generates and emails a fresh 6-digit OTP to the user
+ */
+const resendOtp = async (req, res) => {
+  try {
+    const { email, userId } = req.body;
+    let user = null;
+
+    if (email && typeof email === 'string') {
+      user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      });
+    } else if (userId) {
+      user = await prisma.user.findUnique({
+        where: { id: userId }
+      });
+    }
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'User account not found.'
+      });
+    }
+
+    // Generate 6-digit MFA OTP
+    const otp = generateNumericOtp(6);
+    const otpHash = hashOtp(otp);
+
+    // Store OTP in Redis with 5-min TTL
+    const redisKey = `aegis_otp:login:${user.email.toLowerCase()}`;
+    try {
+      await redisClient.set(redisKey, otpHash, 'EX', OTP_TTL_SECONDS);
+    } catch (redisErr) {
+      logger.warn('Redis cache set failed during resend OTP caching, falling back to DB only', { error: redisErr.message });
+    }
+
+    // Also persist OTP record in database for audit/fallback
+    try {
+      const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
+      await prisma.otpRecord.create({
+        data: {
+          userId: user.id,
+          otpHash,
+          type: 'MFA_LOGIN',
+          expiresAt
+        }
+      });
+    } catch (dbErr) {
+      logger.warn('Failed to persist OTP record in DB, relying on Redis cache:', { error: dbErr.message });
+    }
+
+    // Send OTP via Notification Service
+    await sendOtpEmail(user.email, otp);
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP resent successfully.',
+      expiresInSeconds: OTP_TTL_SECONDS
+    });
+  } catch (err) {
+    logger.error('Resend OTP error:', { error: err.message, stack: err.stack });
+    return res.status(500).json({
+      success: false,
+      error: 'An error occurred while resending the OTP. Please try again later.'
     });
   }
 };
@@ -424,5 +504,6 @@ module.exports = {
   register,
   login,
   verifyOtp,
+  resendOtp,
   refreshToken
 };

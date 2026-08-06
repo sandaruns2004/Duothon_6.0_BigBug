@@ -29,7 +29,8 @@ jobs:
           JWT_SECRET: aegisvault-super-secret-jwt-key-2026
           NODE_ENV: test
         run: |
-          npm install --no-audit --no-fund
+          npm install --no-fund
+          npm audit --audit-level=high || true
           npm test
 
       - name: Install Dependencies & Run Tests - Transaction Service
@@ -37,7 +38,8 @@ jobs:
         env:
           NODE_ENV: test
         run: |
-          npm install --no-audit --no-fund
+          npm install --no-fund
+          npm audit --audit-level=high || true
           npm test
 
   frontend-check:
@@ -55,7 +57,8 @@ jobs:
       - name: Install Frontend Dependencies & Check Build
         working-directory: ./client
         run: |
-          npm install --no-audit --no-fund
+          npm install --no-fund
+          npm audit --audit-level=high || true
           npm run build
 
   docker-compose-test:

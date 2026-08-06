@@ -72,9 +72,17 @@ export default function VerifyOtpPage() {
     }
   };
 
-  const handleResend = () => {
-    setCountdown(60);
+  const handleResend = async () => {
     setError('');
+    try {
+      const res = await authApi.resendOtp({ email, userId });
+      if (res.data?.success) {
+        setCountdown(60);
+      }
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: any; status?: number } };
+      setError(errorObj.response?.data?.error || 'Failed to resend OTP. Please try again.');
+    }
   };
 
   const fillDemoOtp = () => {
