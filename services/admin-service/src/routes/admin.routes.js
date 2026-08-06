@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
+const { requireRole } = require('../middleware/rbac.middleware');
 
 // ═══════════════════════════════════════════════════════════════════
 // Admin Management Routes (/api/admin)
 // ═══════════════════════════════════════════════════════════════════
+
+router.use(requireRole('ADMIN', 'OFFICER')); // Protect all admin routes
 
 router.get('/dashboard', adminController.getDashboard);
 router.get('/users', adminController.listUsers);
