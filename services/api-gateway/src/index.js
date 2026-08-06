@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const crypto = require('crypto');
 const { logger, requestLogger } = require('./config/logger');
 const { publicRateLimiter, authenticatedRateLimiter } = require('./middleware/rateLimiter');
 const { jwtAuthMiddleware } = require('./middleware/jwtAuth');
@@ -24,6 +25,13 @@ app.use(cors({
 }));
 
 app.use(helmet());
+
+// 2. Correlation ID Middleware (x-request-id)
+app.use((req, res, next) => {
+  req.headers['x-request-id'] = req.headers['x-request-id'] || crypto.randomUUID();
+  res.setHeader('x-request-id', req.headers['x-request-id']);
+  next();
+});
 
 // 2. Winston Request Logger Middleware (Structured JSON Logs)
 app.use(requestLogger);
@@ -53,6 +61,14 @@ app.use(jwtAuthMiddleware);
 // Apply authenticated 100 req/min limit to all general /api endpoints
 // Must be placed AFTER jwtAuthMiddleware so req.user exists
 app.use('/api', authenticatedRateLimiter);
+
+// 7.5 Internal Endpoint Restriction Middleware
+app.use((req, res, next) => {
+  if (req.path.includes('/internal')) {
+    return res.status(403).json({ success: false, error: 'Direct access to internal endpoints via gateway is forbidden.' });
+  }
+  next();
+});
 
 // 7. Microservice Reverse Proxy Routing
 setupProxies(app);

@@ -15,12 +15,12 @@ This task list is based on the Priority Action Matrix from the `security_audit_r
 
 ## Phase 2 — Strengthen (Medium Impact, Moderate Effort)
 
-- [ ] **9. Add vulnerability scanning to CI** (Implement `npm audit` / `trivy` in GitHub Actions)
+- [x] **9. Add vulnerability scanning to CI** (Implement `npm audit` / `trivy` in GitHub Actions)
 - [ ] **10. Integrate Azure Key Vault for secrets** (Since we have an active Azure Subscription)
-- [ ] **11. Add request correlation IDs (`x-request-id`)** (For better observability across services)
-- [ ] **12. Add OTP brute-force limiting** (Max 5 attempts before requiring a new OTP)
-- [ ] **13. Restrict internal endpoints with middleware** (Block internal API abuse)
-- [ ] **14. Add Zod validation to transaction/account services** (Ensure strict input validation)
+- [x] **11. Add request correlation IDs (`x-request-id`)** (For better observability across services)
+- [x] **12. Add OTP brute-force limiting** (Max 5 attempts before requiring a new OTP)
+- [x] **13. Restrict internal endpoints with middleware** (Block internal API abuse)
+- [x] **14. Add Zod validation to transaction/account services** (Ensure strict input validation)
 - [ ] **15. Configure Azure Container Apps auto-scaling** (e.g., `--min-replicas 1 --max-replicas 5` in `provision.azcli`)
 - [ ] **16. Add rollback mechanism** (In CD workflow)
 
