@@ -270,16 +270,26 @@ const verifyOtp = async (req, res) => {
     const isOtpValid = isDemoBypass || verifyOtpHash(otp, cachedHash);
 
     if (!isOtpValid) {
-      logger.warn('Invalid MFA OTP attempt:', { userId: user.id, email: user.email });
+      const attemptsKey = `mfa_attempts:${user.id}`;
+      const attempts = await redisClient.incr(attemptsKey);
+      if (attempts === 1) await redisClient.expire(attemptsKey, 300); // 5 min TTL
+      
+      if (attempts >= 5) {
+        await redisClient.del(redisKey); // Invalid OTP entirely
+        return res.status(429).json({ success: false, error: 'Maximum MFA attempts exceeded. Please request a new OTP.' });
+      }
+
+      logger.warn('Invalid MFA OTP attempt:', { userId: user.id, email: user.email, attempts });
       return res.status(400).json({
         success: false,
-        error: 'Invalid MFA verification code. Please check your email and try again.'
+        error: `Invalid MFA verification code. You have ${5 - attempts} attempts remaining.`
       });
     }
 
     // OTP verified: Clean up OTP from Redis
     try {
       await redisClient.del(redisKey);
+      await redisClient.del(`mfa_attempts:${user.id}`);
     } catch (e) {
       // ignore del error
     }
