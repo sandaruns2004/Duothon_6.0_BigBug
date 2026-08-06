@@ -26,11 +26,11 @@ The issue is a **multi-layer problem** spanning the login page AND the verify-OT
 
 #### Layer A: Login page redirect logic is correct ✅ (not the bug)
 
-In [login/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/login/page.tsx#L26-L38), the code checks if `res.data.mfaRequired` is true (which it always is because MFA is mandatory). So it **always** redirects to `/verify-otp` — it never reaches the role-based redirect on line 34. This is actually correct behavior.
+In [login/page.tsx](../client/src/app/login/page.tsx#L26-L38), the code checks if `res.data.mfaRequired` is true (which it always is because MFA is mandatory). So it **always** redirects to `/verify-otp` — it never reaches the role-based redirect on line 34. This is actually correct behavior.
 
 #### Layer B: OTP page redirect logic is correct ✅ (not the bug)
 
-In [verify-otp/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/verify-otp/page.tsx#L50-L55):
+In [verify-otp/page.tsx](../client/src/app/verify-otp/page.tsx#L50-L55):
 ```typescript
 const role = res.data.user?.role || 'CUSTOMER';
 if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
@@ -43,7 +43,7 @@ This looks correct — it should route admins to `/admin`.
 
 #### Layer C: The ACTUAL bug — Backend verify-otp response ⚠️
 
-The [auth.controller.js verify-otp](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/auth.controller.js#L318-L332) **does** return the user role in the response:
+The [auth.controller.js verify-otp](../services/auth-service/src/controllers/auth.controller.js#L318-L332) **does** return the user role in the response:
 ```javascript
 user: {
   id: user.id,
@@ -55,7 +55,7 @@ user: {
 
 #### Layer D: The REAL bug — Token storage doesn't persist role for navigation guards
 
-Looking at [api.ts setTokens()](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/lib/api.ts#L23-L36):
+Looking at [api.ts setTokens()](../client/src/lib/api.ts#L23-L36):
 ```typescript
 export const setTokens = (accessToken: string, refreshToken?: string, role?: string) => {
   if (typeof window !== 'undefined') {
@@ -77,7 +77,7 @@ The redirect logic in verify-otp looks correct syntactically, but the problem ma
 **Files to modify:**
 
 #### Fix 1a: Add role-based redirect guard to `/dashboard`
-In [dashboard/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/dashboard/page.tsx), add at the top of the component:
+In [dashboard/page.tsx](../client/src/app/dashboard/page.tsx), add at the top of the component:
 ```typescript
 useEffect(() => {
   const role = Cookies.get('userRole') || localStorage.getItem('userRole');
@@ -88,7 +88,7 @@ useEffect(() => {
 ```
 
 #### Fix 1b: Add role-based redirect guard to `/admin` 
-In [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx), add a guard that redirects non-admins:
+In [admin/page.tsx](../client/src/app/admin/page.tsx), add a guard that redirects non-admins:
 ```typescript
 useEffect(() => {
   const role = Cookies.get('userRole') || localStorage.getItem('userRole');
@@ -99,7 +99,7 @@ useEffect(() => {
 ```
 
 #### Fix 1c: Verify the seed script sets admin role correctly
-Check [seed-demo.js line 94](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/seed-demo.js#L94) — this creates the admin with `role: 'ADMIN'` which is correct. Also check the [auth-service/src/index.js startup seeder](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/index.js) to ensure it upserts the admin user with the correct role.
+Check [seed-demo.js line 94](../scripts/seed-demo.js#L94) — this creates the admin with `role: 'ADMIN'` which is correct. Also check the [auth-service/src/index.js startup seeder](../services/auth-service/src/index.js) to ensure it upserts the admin user with the correct role.
 
 > [!IMPORTANT]
 > **Quick test after fix:** Login as `admin@aegisvault.com` → OTP `123456` → should redirect to `/admin`. If they manually go to `/dashboard`, the guard should redirect them back to `/admin`.
@@ -117,7 +117,7 @@ There are **3 cascading failures** causing this:
 
 #### Cause A: Mailer always returns mock in non-production
 
-In [mailer.js line 43](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/mailer.js#L43-L54):
+In [mailer.js line 43](../services/notification-service/src/utils/mailer.js#L43-L54):
 ```javascript
 if (process.env.NODE_ENV !== 'production' || SMTP_USER === 'test_smtp_user' || SMTP_HOST === 'smtp.mailtrap.io') {
   logger.info('📧 [DEV / SANDBOX EMAIL DISPATCH] Simulating email delivery instantly (mock mode)');
@@ -147,7 +147,7 @@ The codebase only implements **email-based OTP**. There is no SMS/phone OTP prov
 **Files to modify:**
 
 #### Fix 2a: Fix mailer mock condition
-In [mailer.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/mailer.js#L43):
+In [mailer.js](../services/notification-service/src/utils/mailer.js#L43):
 
 ```diff
 - if (process.env.NODE_ENV !== 'production' || SMTP_USER === 'test_smtp_user' || SMTP_HOST === 'smtp.mailtrap.io') {
@@ -157,7 +157,7 @@ In [mailer.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duotho
 This way, mock mode only activates when BOTH values are their defaults (i.e., no real SMTP was configured). If you provide real Mailtrap credentials or any other SMTP provider, it will actually send.
 
 #### Fix 2b: Set real SMTP credentials in Azure CD
-In [cd.yml line 180](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml#L180), the notification-service deployment sets `SMTP_HOST="smtp.mailtrap.io"`. Update GitHub secrets with valid Mailtrap sandbox credentials:
+In [cd.yml line 180](../.github/workflows/cd.yml#L180), the notification-service deployment sets `SMTP_HOST="smtp.mailtrap.io"`. Update GitHub secrets with valid Mailtrap sandbox credentials:
 - Set `SMTP_USERNAME` to your actual Mailtrap inbox username
 - Set `SMTP_PASSWORD` to your actual Mailtrap inbox password
 
@@ -181,7 +181,7 @@ When a user uploads a KYC document on the `/profile` page, it instantly shows as
 
 #### Cause A: Backend `uploadKyc` hardcodes `kycStatus: 'VERIFIED'`
 
-In [user.controller.js line 159](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/user.controller.js#L154-L159):
+In [user.controller.js line 159](../services/auth-service/src/controllers/user.controller.js#L154-L159):
 ```javascript
 const updatedUser = await prisma.user.update({
   where: { id: String(userId) },
@@ -197,7 +197,7 @@ The comment on line 159 even says: *"Automatic verification for Phase 2 immediat
 
 #### Cause B: Frontend fakes the verification with `setTimeout`
 
-In [profile/page.tsx line 102-112](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/profile/page.tsx#L102-L112):
+In [profile/page.tsx line 102-112](../client/src/app/profile/page.tsx#L102-L112):
 ```typescript
 const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -216,12 +216,12 @@ The file isn't even uploaded to the server! It just visually fakes verification 
 
 #### Cause C: Loans auto-approve without admin review
 
-In [loan.controller.js line 116](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/loan.controller.js#L116):
+In [loan.controller.js line 116](../services/account-service/src/controllers/loan.controller.js#L116):
 ```javascript
 const loanStatus = status || 'APPROVED';  // ← BUG: Defaults to 'APPROVED'
 ```
 
-And on [lines 143-148](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/loan.controller.js#L143-L148):
+And on [lines 143-148](../services/account-service/src/controllers/loan.controller.js#L143-L148):
 ```javascript
 if (loanStatus === 'APPROVED' || loanStatus === 'ACTIVE') {
   await tx.account.update({
@@ -235,14 +235,14 @@ The loan amount is immediately credited to the account without any admin review 
 
 #### Cause D: Admin panel has no KYC document viewer
 
-In [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx), the admin can click "Verify KYC" on a user, but there's **no way to view the uploaded KYC document** before approving. The admin has no visibility into what was submitted.
+In [admin/page.tsx](../client/src/app/admin/page.tsx), the admin can click "Verify KYC" on a user, but there's **no way to view the uploaded KYC document** before approving. The admin has no visibility into what was submitted.
 
 ### Fix Instructions
 
 **Files to modify:**
 
 #### Fix 3a: Change KYC upload to set status to `PENDING` instead of `VERIFIED`
-In [user.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/user.controller.js):
+In [user.controller.js](../services/auth-service/src/controllers/user.controller.js):
 
 ```diff
   const updatedUser = await prisma.user.update({
@@ -264,7 +264,7 @@ In [user.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitio
 ```
 
 #### Fix 3b: Fix frontend to show `PENDING` state after upload (not fake `VERIFIED`)
-In [profile/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/profile/page.tsx):
+In [profile/page.tsx](../client/src/app/profile/page.tsx):
 
 ```diff
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,7 +287,7 @@ In [profile/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions
 ```
 
 #### Fix 3c: Change loan default status from `APPROVED` to `PENDING`
-In [loan.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/loan.controller.js):
+In [loan.controller.js](../services/account-service/src/controllers/loan.controller.js):
 
 ```diff
 - const loanStatus = status || 'APPROVED';
@@ -297,14 +297,14 @@ In [loan.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitio
 This means loans are created as `PENDING` and the loan amount is NOT credited until an admin approves.
 
 #### Fix 3d: Add admin endpoint to approve loans
-In [admin.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/controllers/admin.controller.js), add a new `approveLoan` function. Then add a route in [admin.routes.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/routes/admin.routes.js):
+In [admin.controller.js](../services/admin-service/src/controllers/admin.controller.js), add a new `approveLoan` function. Then add a route in [admin.routes.js](../services/admin-service/src/routes/admin.routes.js):
 
 ```javascript
 router.put('/loans/:id/approve', adminController.approveLoan);
 ```
 
 #### Fix 3e: Add KYC document viewer to admin panel
-In [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx), add a "View KYC" button next to the "Verify" button that shows the uploaded document reference in a modal. The admin API `GET /api/admin/users` should also return `kycDocument` field — currently the [admin.controller.js listUsers](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/controllers/admin.controller.js#L117-L128) select query doesn't include `kycDocument`.
+In [admin/page.tsx](../client/src/app/admin/page.tsx), add a "View KYC" button next to the "Verify" button that shows the uploaded document reference in a modal. The admin API `GET /api/admin/users` should also return `kycDocument` field — currently the [admin.controller.js listUsers](../services/admin-service/src/controllers/admin.controller.js#L117-L128) select query doesn't include `kycDocument`.
 
 #### Fix 3f: Add Pending Loans tab to Admin Panel
 Add a new tab in the admin dashboard to show pending loans and an "Approve" action button.
@@ -324,15 +324,15 @@ RabbitMQ is used for async email, notification, and audit event delivery. But in
 #### Cause A: RabbitMQ is completely missing from Azure provisioning
 
 Searching the infrastructure files:
-- [provision.azcli](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/infrastructure/provision.azcli) — **Zero mentions of RabbitMQ**
-- [cd.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml) — **Zero mentions of RabbitMQ**
+- [provision.azcli](../infrastructure/provision.azcli) — **Zero mentions of RabbitMQ**
+- [cd.yml](../.github/workflows/cd.yml) — **Zero mentions of RabbitMQ**
 - No `RABBITMQ_URL` or `AMQP_URL` environment variable is passed to any service in the CD pipeline
 
 RabbitMQ is only defined in `docker-compose.yml` for local development. It was **never provisioned or deployed** to Azure.
 
 #### Cause B: Services fail silently when RabbitMQ is unavailable
 
-The [rabbitmq.js utility](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/rabbitmq.js) uses `amqp-connection-manager` which silently queues messages when disconnected. It doesn't crash the service — but messages are never delivered.
+The [rabbitmq.js utility](../services/auth-service/src/utils/rabbitmq.js) uses `amqp-connection-manager` which silently queues messages when disconnected. It doesn't crash the service — but messages are never delivered.
 
 #### Cause C: The AMQP URL defaults to `localhost`
 
@@ -347,7 +347,7 @@ In Azure Container Apps, `localhost` refers to the container itself — not a Ra
 
 #### Fix 4a: Deploy RabbitMQ as an Azure Container App
 
-Add to [provision.azcli](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/infrastructure/provision.azcli):
+Add to [provision.azcli](../infrastructure/provision.azcli):
 
 ```bash
 # Deploy RabbitMQ as internal Container App
@@ -365,7 +365,7 @@ az containerapp create \
 
 #### Fix 4b: Add RabbitMQ to the CD pipeline
 
-In [cd.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml), add `RABBITMQ_URL` / `AMQP_URL` env vars to the services that need it:
+In [cd.yml](../.github/workflows/cd.yml), add `RABBITMQ_URL` / `AMQP_URL` env vars to the services that need it:
 
 ```bash
 # For auth-service, add:
@@ -385,7 +385,7 @@ Specifically, update the `az containerapp update` commands for:
 
 #### Fix 4c: Add the change detection filter
 
-In the `changes` job filter section of [cd.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml#L26-L38), there's no filter for rabbitmq. It needs one if you plan to manage it through the CD pipeline.
+In the `changes` job filter section of [cd.yml](../.github/workflows/cd.yml#L26-L38), there's no filter for rabbitmq. It needs one if you plan to manage it through the CD pipeline.
 
 #### Fix 4d: Add a health verification endpoint
 
@@ -435,13 +435,13 @@ graph LR
 
 | Priority | Task | Files | Est. Time |
 |----------|------|-------|-----------|
-| 🔴 P0 | **Fix KYC backend**: Change `kycStatus: 'VERIFIED'` → `'PENDING'` in uploadKyc | [user.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/user.controller.js#L159) | 5 min |
-| 🔴 P0 | **Fix loan default status**: Change `'APPROVED'` → `'PENDING'` | [loan.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/loan.controller.js#L116) | 5 min |
-| 🔴 P0 | **Add admin loan approval endpoint**: New `PUT /api/admin/loans/:id/approve` | [admin.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/controllers/admin.controller.js) + [admin.routes.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/routes/admin.routes.js) | 30 min |
-| 🔴 P0 | **Add `kycDocument` to admin user list query** | [admin.controller.js L117-128](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/controllers/admin.controller.js#L117) | 5 min |
-| 🔴 P0 | **Deploy RabbitMQ to Azure** | [provision.azcli](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/infrastructure/provision.azcli) | 15 min |
-| 🔴 P0 | **Add AMQP_URL env vars to CD pipeline** | [cd.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml#L168-L180) | 10 min |
-| 🟡 P1 | **Fix mailer mock condition** | [mailer.js L43](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/mailer.js#L43) | 5 min |
+| 🔴 P0 | **Fix KYC backend**: Change `kycStatus: 'VERIFIED'` → `'PENDING'` in uploadKyc | [user.controller.js](../services/auth-service/src/controllers/user.controller.js#L159) | 5 min |
+| 🔴 P0 | **Fix loan default status**: Change `'APPROVED'` → `'PENDING'` | [loan.controller.js](../services/account-service/src/controllers/loan.controller.js#L116) | 5 min |
+| 🔴 P0 | **Add admin loan approval endpoint**: New `PUT /api/admin/loans/:id/approve` | [admin.controller.js](../services/admin-service/src/controllers/admin.controller.js) + [admin.routes.js](../services/admin-service/src/routes/admin.routes.js) | 30 min |
+| 🔴 P0 | **Add `kycDocument` to admin user list query** | [admin.controller.js L117-128](../services/admin-service/src/controllers/admin.controller.js#L117) | 5 min |
+| 🔴 P0 | **Deploy RabbitMQ to Azure** | [provision.azcli](../infrastructure/provision.azcli) | 15 min |
+| 🔴 P0 | **Add AMQP_URL env vars to CD pipeline** | [cd.yml](../.github/workflows/cd.yml#L168-L180) | 10 min |
+| 🟡 P1 | **Fix mailer mock condition** | [mailer.js L43](../services/notification-service/src/utils/mailer.js#L43) | 5 min |
 | 🟡 P1 | **Update SMTP secrets in GitHub** | GitHub repo → Settings → Secrets | 5 min |
 
 **Estimated total: ~80 min**
@@ -452,13 +452,13 @@ graph LR
 
 | Priority | Task | Files | Est. Time |
 |----------|------|-------|-----------|
-| 🔴 P0 | **Add admin redirect guard to `/dashboard`** | [dashboard/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/dashboard/page.tsx) | 10 min |
-| 🔴 P0 | **Add customer redirect guard to `/admin`** | [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx) | 10 min |
-| 🔴 P0 | **Fix KYC upload UI**: Remove `setTimeout` fake, submit to backend API, show PENDING | [profile/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/profile/page.tsx#L102-L112) | 20 min |
-| 🔴 P0 | **Add KYC document viewer modal to admin panel** | [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx#L519-L528) | 30 min |
-| 🟡 P1 | **Add Pending Loans tab to admin panel** with approve/reject buttons | [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx) | 45 min |
-| 🟡 P1 | **Update loan application form** to show "Pending Approval" status after submission | [payments/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/payments/page.tsx) | 15 min |
-| 🟢 P2 | **Add RabbitMQ status to admin dashboard** health metrics section | [admin/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/admin/page.tsx) | 15 min |
+| 🔴 P0 | **Add admin redirect guard to `/dashboard`** | [dashboard/page.tsx](../client/src/app/dashboard/page.tsx) | 10 min |
+| 🔴 P0 | **Add customer redirect guard to `/admin`** | [admin/page.tsx](../client/src/app/admin/page.tsx) | 10 min |
+| 🔴 P0 | **Fix KYC upload UI**: Remove `setTimeout` fake, submit to backend API, show PENDING | [profile/page.tsx](../client/src/app/profile/page.tsx#L102-L112) | 20 min |
+| 🔴 P0 | **Add KYC document viewer modal to admin panel** | [admin/page.tsx](../client/src/app/admin/page.tsx#L519-L528) | 30 min |
+| 🟡 P1 | **Add Pending Loans tab to admin panel** with approve/reject buttons | [admin/page.tsx](../client/src/app/admin/page.tsx) | 45 min |
+| 🟡 P1 | **Update loan application form** to show "Pending Approval" status after submission | [payments/page.tsx](../client/src/app/payments/page.tsx) | 15 min |
+| 🟢 P2 | **Add RabbitMQ status to admin dashboard** health metrics section | [admin/page.tsx](../client/src/app/admin/page.tsx) | 15 min |
 
 **Estimated total: ~145 min**
 

@@ -203,7 +203,7 @@ Duothon_6.0_BigBug/
 
 **How it's configured:**
 
-The [init-schemas.sql](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/init-schemas.sql) script runs automatically when the PostgreSQL container starts (via Docker's `docker-entrypoint-initdb.d` mechanism). It creates these 5 schemas:
+The [init-schemas.sql](../scripts/init-schemas.sql) script runs automatically when the PostgreSQL container starts (via Docker's `docker-entrypoint-initdb.d` mechanism). It creates these 5 schemas:
 
 | Schema | Used By | Contains |
 |--------|---------|----------|
@@ -221,7 +221,7 @@ postgresql://aegis_admin:securep@ss123@postgres:5432/aegisvault?schema=acct_db
 ...
 ```
 
-**Prisma ORM:** Every service has its own [schema.prisma](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/prisma/schema.prisma) file that defines the database models for that service. Prisma uses the `multiSchema` preview feature to target specific PostgreSQL schemas. The generated client code lives in `prisma/generated/client/`.
+**Prisma ORM:** Every service has its own [schema.prisma](../services/auth-service/prisma/schema.prisma) file that defines the database models for that service. Prisma uses the `multiSchema` preview feature to target specific PostgreSQL schemas. The generated client code lives in `prisma/generated/client/`.
 
 > [!NOTE]
 > **Schema push on startup**: The auth service runs `npx prisma db push` on startup to auto-sync its schema with PostgreSQL. This means the tables are created automatically — no manual migration step needed.
@@ -237,8 +237,8 @@ postgresql://aegis_admin:securep@ss123@postgres:5432/aegisvault?schema=acct_db
 2. **Rate Limiting (API Gateway):** The rate limiter stores request counters in Redis using the `rate-limit-redis` package. Keys are prefixed with `aegis_rl_public:` or `aegis_rl_auth:`.
 
 **Graceful fallback:** If Redis goes down, neither feature crashes:
-- The **rate limiter** falls back to an in-memory store (see [rateLimiter.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/rateLimiter.js))
-- The **OTP check** falls back to querying the `otp_records` PostgreSQL table (see [auth.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/auth.controller.js#L241))
+- The **rate limiter** falls back to an in-memory store (see [rateLimiter.js](../services/api-gateway/src/middleware/rateLimiter.js))
+- The **OTP check** falls back to querying the `otp_records` PostgreSQL table (see [auth.controller.js](../services/auth-service/src/controllers/auth.controller.js#L241))
 
 ---
 
@@ -325,7 +325,7 @@ service-name/
 
 **File breakdown:**
 
-#### [index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/index.js) — Entry point
+#### [index.js](../services/api-gateway/src/index.js) — Entry point
 Sets up the Express app with this middleware pipeline (order matters!):
 1. **CORS** — Allows cross-origin requests from the frontend
 2. **Helmet** — Sets security HTTP headers (X-Frame-Options, CSP, etc.)
@@ -337,7 +337,7 @@ Sets up the Express app with this middleware pipeline (order matters!):
 8. **404 Handler** — Catches unmatched routes
 9. **Error Handler** — Global exception handler
 
-#### [middleware/jwtAuth.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/jwtAuth.js) — JWT Authentication
+#### [middleware/jwtAuth.js](../services/api-gateway/src/middleware/jwtAuth.js) — JWT Authentication
 - Maintains a **whitelist** of public routes that don't need authentication (login, register, verify-otp, health)
 - For protected routes, extracts the JWT from the `Authorization: Bearer <token>` header OR from cookies
 - Verifies the JWT signature using the shared secret
@@ -347,7 +347,7 @@ Sets up the Express app with this middleware pipeline (order matters!):
   - `x-user-email` — The user's email
 - These headers are how downstream microservices know *who* is making the request without having to verify the JWT themselves
 
-#### [middleware/proxy.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/proxy.js) — Reverse Proxy
+#### [middleware/proxy.js](../services/api-gateway/src/middleware/proxy.js) — Reverse Proxy
 - Uses `http-proxy-middleware` to forward requests to backend services
 - Route mapping:
   - `/api/auth/*` and `/api/users/*` → Auth Service (`:3001`)
@@ -359,17 +359,17 @@ Sets up the Express app with this middleware pipeline (order matters!):
 - Uses `fixRequestBody` to ensure JSON bodies stream correctly through the proxy
 - Returns `503 Service Unavailable` if a backend service is unreachable
 
-#### [middleware/rateLimiter.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/rateLimiter.js) — Rate Limiting
+#### [middleware/rateLimiter.js](../services/api-gateway/src/middleware/rateLimiter.js) — Rate Limiting
 - **Public rate limiter** (`/api/auth/*`): 20 requests/minute per IP
 - **Authenticated rate limiter** (`/api/*`): 100 requests/minute per user ID (or IP if unauthenticated)
 - Uses Redis as backing store when available; falls back to in-memory store otherwise
 
-#### [config/redis.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/config/redis.js) — Redis Client
+#### [config/redis.js](../services/api-gateway/src/config/redis.js) — Redis Client
 - Connects to Redis using `ioredis` with retry logic
 - `lazyConnect: true` means it doesn't crash on startup if Redis is unavailable
 - Exports a `checkRedisConnected()` helper used by the rate limiter
 
-#### [config/logger.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/config/logger.js) — Winston Logger
+#### [config/logger.js](../services/api-gateway/src/config/logger.js) — Winston Logger
 - Outputs structured JSON logs with timestamps
 - The `requestLogger` middleware logs every HTTP request completion with: method, path, status code, duration, user ID, and user agent
 - Logs are color-coded by severity: `>=500` → error, `>=400` → warn, else → info
@@ -382,14 +382,14 @@ Sets up the Express app with this middleware pipeline (order matters!):
 
 **File breakdown:**
 
-#### [index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/index.js) — Entry point
+#### [index.js](../services/auth-service/src/index.js) — Entry point
 - **Special startup behavior:** Runs `initDatabaseAndSeed()` before starting the server which:
   1. Runs `prisma db push` to sync the schema with PostgreSQL (creates tables if they don't exist)
   2. Seeds a demo customer (`customer1@aegisvault.com`)
   3. Seeds a demo admin (`admin@aegisvault.com`)
 - Mounts routes on both `/api/auth` and `/auth` prefixes for flexible proxy compatibility
 
-#### [controllers/auth.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/auth.controller.js) — Auth Business Logic
+#### [controllers/auth.controller.js](../services/auth-service/src/controllers/auth.controller.js) — Auth Business Logic
 
 **`POST /api/auth/register`** — User Registration
 - Checks for duplicate email/phone/NIC
@@ -417,18 +417,18 @@ Sets up the Express app with this middleware pipeline (order matters!):
 - Looks up the hashed refresh token in the `refresh_tokens` database table
 - Issues a new 15-minute access token
 
-#### [controllers/user.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/user.controller.js) — User Profile
+#### [controllers/user.controller.js](../services/auth-service/src/controllers/user.controller.js) — User Profile
 - `GET /api/users/profile` — Returns the authenticated user's profile data
 - `PUT /api/users/profile` — Updates email/phone with duplicate checking
 - `POST /api/users/kyc` — Submits KYC document reference and auto-verifies
 
-#### [utils/otp.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/otp.js) — OTP Utilities
+#### [utils/otp.js](../services/auth-service/src/utils/otp.js) — OTP Utilities
 - `generateNumericOtp(6)` — Uses `crypto.randomInt()` for cryptographically secure random generation
 - `hashOtp(otp)` — SHA-256 hash for storage (never store plaintext OTPs!)
 - `verifyOtpHash(otp, hash)` — Constant-time comparison
 - `sendOtpEmail(email, otp)` — Publishes the OTP email command to RabbitMQ
 
-#### [utils/rabbitmq.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/rabbitmq.js) — RabbitMQ Client
+#### [utils/rabbitmq.js](../services/auth-service/src/utils/rabbitmq.js) — RabbitMQ Client
 - Uses `amqp-connection-manager` for automatic reconnection
 - Asserts two exchanges on startup:
   - `aegisvault.commands` (direct) — for command messages
@@ -437,12 +437,12 @@ Sets up the Express app with this middleware pipeline (order matters!):
 - `publishEvent(routingKey, message)` — Publishes to the events exchange
 - Messages are `persistent: true` (survives RabbitMQ restart)
 
-#### [utils/validation.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/validation.js) — Input Validation
+#### [utils/validation.js](../services/auth-service/src/utils/validation.js) — Input Validation
 - Uses **Zod** schemas to validate all request bodies
 - Password policy: min 8 chars, must contain uppercase + lowercase + number + special character
 - The `validate(schema)` middleware factory parses `req.body` and returns structured 400 errors if validation fails
 
-#### [prisma/schema.prisma](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/prisma/schema.prisma) — Database Schema
+#### [prisma/schema.prisma](../services/auth-service/prisma/schema.prisma) — Database Schema
 - **User** — id, email, phone, NIC, passwordHash, role (CUSTOMER/ADMIN/OFFICER), failedAttempts, isLocked, kycStatus (PENDING/VERIFIED/REJECTED)
 - **RefreshToken** — userId → User, tokenHash, expiresAt
 - **OtpRecord** — userId → User, otpHash, type (MFA_LOGIN), expiresAt
@@ -455,7 +455,7 @@ Sets up the Express app with this middleware pipeline (order matters!):
 
 **File breakdown:**
 
-#### [controllers/account.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/account.controller.js) — Account & Transfer Logic
+#### [controllers/account.controller.js](../services/account-service/src/controllers/account.controller.js) — Account & Transfer Logic
 
 **`POST /api/accounts`** — Create Bank Account
 - Auto-generates a 12-digit account number
@@ -485,7 +485,7 @@ Sets up the Express app with this middleware pipeline (order matters!):
 - Used by the Transaction Service for external transfers
 - Both use `prisma.$transaction` for atomicity
 
-#### [controllers/loan.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/loan.controller.js) — Loan Management
+#### [controllers/loan.controller.js](../services/account-service/src/controllers/loan.controller.js) — Loan Management
 
 **`POST /api/loans/apply`** — Apply for a Loan
 - Calculates fixed monthly amortization payment using the standard formula: `P * r(1+r)^n / ((1+r)^n - 1)`
@@ -496,7 +496,7 @@ Sets up the Express app with this middleware pipeline (order matters!):
 **`GET /api/loans/:id`** — Single loan details
 **`POST /api/loans/calculate`** — Calculator only (no DB write)
 
-#### [prisma/schema.prisma](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/prisma/schema.prisma) — Database Schema
+#### [prisma/schema.prisma](../services/account-service/prisma/schema.prisma) — Database Schema
 - **Account** — userId, accountNumber (unique), accountType, balance (Decimal 15,2), currency (LKR), status (ACTIVE/FROZEN/CLOSED)
 - **Loan** — userId, accountId → Account, amount, interestRate, termMonths, monthlyPayment, status (PENDING/APPROVED/ACTIVE/PAID)
 - **UtilityReceipt** — userId, accountId → Account, biller, amount, receiptNumber (unique), status
@@ -509,7 +509,7 @@ Sets up the Express app with this middleware pipeline (order matters!):
 
 **File breakdown:**
 
-#### [controllers/transaction.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/controllers/transaction.controller.js) — Transfer Orchestration
+#### [controllers/transaction.controller.js](../services/transaction-service/src/controllers/transaction.controller.js) — Transfer Orchestration
 
 **`POST /api/transactions/transfer`** — Internal Transfer (the main flow):
 
@@ -564,7 +564,7 @@ sequenceDiagram
 **`GET /api/transactions/:id`** — Single Transaction Details
 **`GET /api/transactions/:id/receipt`** — Formatted Receipt
 
-#### [utils/fraudEngine.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/fraudEngine.js) — Fraud Detection Engine
+#### [utils/fraudEngine.js](../services/transaction-service/src/utils/fraudEngine.js) — Fraud Detection Engine
 
 Three real-time rules:
 
@@ -579,13 +579,13 @@ If ANY rule triggers, the transaction is marked as `FLAGGED` (but still executes
 > [!NOTE]
 > The fraud engine fails safe: if a database query errors during rule evaluation, it returns `isFlagged: false` rather than blocking the transaction.
 
-#### [utils/iso8583.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/iso8583.js) — ISO 8583 Clearing Simulator
+#### [utils/iso8583.js](../services/transaction-service/src/utils/iso8583.js) — ISO 8583 Clearing Simulator
 - Simulates the real-world financial message format used by VISA/Mastercard
 - Generates MTI codes (0200 request / 0210 response), STAN, RRN, Auth Codes
 - 99.9% success rate (0.1% simulated decline for realism)
 - Response codes: `00` (approved), `05` (do not honor), `91` (issuer switch inoperative)
 
-#### [utils/notifier.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/notifier.js) — Async Notification Dispatcher
+#### [utils/notifier.js](../services/transaction-service/src/utils/notifier.js) — Async Notification Dispatcher
 - Uses `setImmediate()` for **fire-and-forget** execution — the API response returns immediately while notifications are sent in the background
 - Publishes two messages to RabbitMQ:
   1. `notify.send` to commands exchange (triggers email notification)
@@ -599,28 +599,28 @@ If ANY rule triggers, the transaction is marked as `FLAGGED` (but still executes
 
 **File breakdown:**
 
-#### [index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/index.js) — Entry point
+#### [index.js](../services/notification-service/src/index.js) — Entry point
 - After server starts, connects to RabbitMQ and starts 3 consumers:
   - `email_queue` → `handleEmailMessage`
   - `notify_queue` → `handleNotifyMessage`
   - `audit_queue` → `handleAuditMessage`
 
-#### [consumers/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/consumers/index.js) — RabbitMQ Consumer Handlers
+#### [consumers/index.js](../services/notification-service/src/consumers/index.js) — RabbitMQ Consumer Handlers
 - Creates **mock Express req/res objects** to pass RabbitMQ message payloads into the existing Express controllers — this is a clever reuse pattern that avoids duplicating business logic
 
-#### [controllers/notification.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/controllers/notification.controller.js) — Notification Logic
+#### [controllers/notification.controller.js](../services/notification-service/src/controllers/notification.controller.js) — Notification Logic
 - `POST /internal/notify` — Stores a `Notification` record in DB AND sends HTML email
 - `POST /internal/email` — Direct email sending (used for OTP emails)
 - `GET /api/notifications` — Paginated user notifications with unread count
 - `PUT /api/notifications/:id/read` — Mark single notification as read
 - `PUT /api/notifications/read-all` — Batch mark all as read
 
-#### [controllers/audit.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/controllers/audit.controller.js) — Audit Trail
+#### [controllers/audit.controller.js](../services/notification-service/src/controllers/audit.controller.js) — Audit Trail
 - `POST /internal/audit` — Records an immutable audit log entry in the hash chain
 - `GET /api/audit` — Searchable, filterable admin viewer for audit logs
 - `GET /api/audit/verify-chain` — Mathematically verifies the entire hash chain integrity
 
-#### [utils/auditEngine.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/auditEngine.js) — Cryptographic Hash Chain Engine
+#### [utils/auditEngine.js](../services/notification-service/src/utils/auditEngine.js) — Cryptographic Hash Chain Engine
 
 This is one of the most interesting parts of the system. Here's how it works:
 
@@ -634,7 +634,7 @@ This is one of the most interesting parts of the system. Here's how it works:
 - For each log, recalculates what its hash SHOULD be based on its data and previousHash
 - If ANY calculated hash doesn't match the stored hash → the chain is broken (data was tampered with)
 
-#### [utils/mailer.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/mailer.js) — Email Sender
+#### [utils/mailer.js](../services/notification-service/src/utils/mailer.js) — Email Sender
 - Uses **Nodemailer** to send HTML emails via SMTP
 - Configured for **Mailtrap** (email testing sandbox) by default
 - In dev/sandbox mode, **simulates email delivery** instantly (logs the email content and returns success) — this ensures the flow never blocks even without a real SMTP server
@@ -646,7 +646,7 @@ This is one of the most interesting parts of the system. Here's how it works:
 
 **Purpose:** Back-office administration — dashboard metrics aggregation, user governance, KYC verification, and fraud alert monitoring.
 
-#### [controllers/admin.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/controllers/admin.controller.js) — Admin Logic
+#### [controllers/admin.controller.js](../services/admin-service/src/controllers/admin.controller.js) — Admin Logic
 
 > [!IMPORTANT]
 > The Admin Service has a **special database setup**: its Prisma schema includes models from auth_db, acct_db, AND txn_db schemas. This lets it run cross-schema aggregation queries that individual services can't do alone.
@@ -672,7 +672,7 @@ This is one of the most interesting parts of the system. Here's how it works:
 
 **Purpose:** A server-rendered React application that provides the user interface for customers and admins.
 
-#### [client/src/lib/api.ts](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/lib/api.ts) — API Client (The Heart of Frontend Communication)
+#### [client/src/lib/api.ts](../client/src/lib/api.ts) — API Client (The Heart of Frontend Communication)
 
 This is the most important frontend file. It creates an **Axios instance** with two interceptors:
 
@@ -693,12 +693,12 @@ txnApi.getTransactions()             // GET /api/transactions
 adminApi.getDashboard()              // GET /api/admin/dashboard
 ```
 
-#### [client/src/app/layout.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/layout.tsx) — Root Layout
+#### [client/src/app/layout.tsx](../client/src/app/layout.tsx) — Root Layout
 - Sets dark mode by default (`className="dark"`)
 - Renders the `Navbar` component on every page
 - Footer with "Cryptographic Audit Chain: ACTIVE" status indicator
 
-#### [client/src/app/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/page.tsx) — Landing Page
+#### [client/src/app/page.tsx](../client/src/app/page.tsx) — Landing Page
 - Hero section with animated text using Framer Motion
 - Three feature cards: Cryptographic Audit, ACID Transfers, Fraud Detection
 - CTAs: Launch Dashboard, Customer Sign In, Open Account
@@ -721,7 +721,7 @@ adminApi.getDashboard()              // GET /api/admin/dashboard
 
 ## 8. Docker & Container Orchestration
 
-### [docker-compose.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/docker-compose.yml) — Full Stack Orchestration
+### [docker-compose.yml](../docker-compose.yml) — Full Stack Orchestration
 
 This file defines **8 containers** that work together:
 
@@ -778,16 +778,16 @@ graph TB
 
 | Service | Key Details |
 |---------|-------------|
-| [API Gateway Dockerfile](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/Dockerfile) | Single-stage, `--omit=dev` (no dev dependencies) |
-| [Auth Service Dockerfile](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/Dockerfile) | Installs `openssl` (needed by Prisma), runs `prisma generate` |
-| [Client Dockerfile](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/Dockerfile) | Multi-stage: builder (npm build) → runner (npm start) |
-| [Dockerfile.template](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/Dockerfile.template) | Reference template with multi-stage build, non-root user |
+| [API Gateway Dockerfile](../services/api-gateway/Dockerfile) | Single-stage, `--omit=dev` (no dev dependencies) |
+| [Auth Service Dockerfile](../services/auth-service/Dockerfile) | Installs `openssl` (needed by Prisma), runs `prisma generate` |
+| [Client Dockerfile](../client/Dockerfile) | Multi-stage: builder (npm build) → runner (npm start) |
+| [Dockerfile.template](../Dockerfile.template) | Reference template with multi-stage build, non-root user |
 
 ---
 
 ## 9. CI/CD Pipeline (GitHub Actions)
 
-### [ci.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/ci.yml) — Continuous Integration
+### [ci.yml](../.github/workflows/ci.yml) — Continuous Integration
 
 **Triggers:** Push or PR to `main`, `master`, or `develop` branches.
 
@@ -811,7 +811,7 @@ graph LR
    - `docker compose config` — Validates the compose file syntax
    - `docker compose build --no-cache` — Dry-run build of 3 core services
 
-### [cd.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml) — Continuous Deployment
+### [cd.yml](../.github/workflows/cd.yml) — Continuous Deployment
 
 **Triggers:** Push to `main` or `master` only.
 
@@ -861,7 +861,7 @@ graph LR
 
 ## 10. Azure Cloud Deployment
 
-### [infrastructure/provision.azcli](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/infrastructure/provision.azcli) — Azure Infrastructure Setup
+### [infrastructure/provision.azcli](../infrastructure/provision.azcli) — Azure Infrastructure Setup
 
 This is a one-time provisioning script that creates the Azure resources:
 
@@ -930,7 +930,7 @@ After provisioning, the script outputs the ACR credentials that need to be added
 
 ## 12. Scripts & Tooling
 
-### [scripts/seed-demo.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/seed-demo.js) — Database Seeder
+### [scripts/seed-demo.js](../scripts/seed-demo.js) — Database Seeder
 
 Prepopulates the database with demo data for testing:
 1. **Schema sync** — Runs `prisma db push` for all 5 services
@@ -940,7 +940,7 @@ Prepopulates the database with demo data for testing:
 5. **Sample transactions** — 1 normal transfer, 1 fraud-flagged transaction (650,000 LKR)
 6. **Audit trail genesis** — Initial SHA-256 hash chain entry
 
-### [scripts/smoke-test.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/smoke-test.js) — E2E Smoke Test
+### [scripts/smoke-test.js](../scripts/smoke-test.js) — E2E Smoke Test
 
 A 7-step automated test that validates the entire platform is operational:
 1. Health check (`/health`)
@@ -953,10 +953,10 @@ A 7-step automated test that validates the entire platform is operational:
 
 Run with: `npm run test:e2e` or `node scripts/smoke-test.js`
 
-### [scripts/init-schemas.sql](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/init-schemas.sql) — DB Initialization
+### [scripts/init-schemas.sql](../scripts/init-schemas.sql) — DB Initialization
 Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` role.
 
-### [package.json](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/package.json) — Root Monorepo
+### [package.json](../package.json) — Root Monorepo
 
 ```json
 "workspaces": ["services/*", "client"]   // npm workspace configuration
@@ -997,12 +997,12 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [docker-compose.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/docker-compose.yml) | Defines all 8 containers, networks, volumes, health checks, and dependency order |
-| [package.json](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/package.json) | Monorepo root with npm workspaces, dev dependencies, and convenience scripts |
-| [.env.example](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.env.example) | Template for all environment variables (copy to `.env` before running) |
-| [Dockerfile.template](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/Dockerfile.template) | Reference multi-stage Dockerfile with non-root user for production |
-| [.gitignore](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.gitignore) | Git ignore rules (node_modules, .env, generated Prisma, etc.) |
-| [.dockerignore](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.dockerignore) | Docker build context exclusions |
+| [docker-compose.yml](../docker-compose.yml) | Defines all 8 containers, networks, volumes, health checks, and dependency order |
+| [package.json](../package.json) | Monorepo root with npm workspaces, dev dependencies, and convenience scripts |
+| [.env.example](../.env.example) | Template for all environment variables (copy to `.env` before running) |
+| [Dockerfile.template](../Dockerfile.template) | Reference multi-stage Dockerfile with non-root user for production |
+| [.gitignore](../.gitignore) | Git ignore rules (node_modules, .env, generated Prisma, etc.) |
+| [.dockerignore](../.dockerignore) | Docker build context exclusions |
 
 ---
 
@@ -1010,14 +1010,14 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/index.js) | Express app entry point — assembles the middleware pipeline |
-| [src/middleware/jwtAuth.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/jwtAuth.js) | JWT verification, public route whitelist, user identity header injection |
-| [src/middleware/proxy.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/proxy.js) | HTTP reverse proxy routing to 5 backend microservices |
-| [src/middleware/rateLimiter.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/middleware/rateLimiter.js) | Redis-backed rate limiting (20/min public, 100/min authenticated) |
-| [src/config/redis.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/config/redis.js) | Redis client for rate limiter backing store |
-| [src/config/logger.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/src/config/logger.js) | Winston structured JSON logger + HTTP request logging middleware |
-| [Dockerfile](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/Dockerfile) | Single-stage Node.js 20 Alpine container |
-| [package.json](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/api-gateway/package.json) | Dependencies: express, cors, helmet, ioredis, jsonwebtoken, http-proxy-middleware, express-rate-limit, rate-limit-redis, winston |
+| [src/index.js](../services/api-gateway/src/index.js) | Express app entry point — assembles the middleware pipeline |
+| [src/middleware/jwtAuth.js](../services/api-gateway/src/middleware/jwtAuth.js) | JWT verification, public route whitelist, user identity header injection |
+| [src/middleware/proxy.js](../services/api-gateway/src/middleware/proxy.js) | HTTP reverse proxy routing to 5 backend microservices |
+| [src/middleware/rateLimiter.js](../services/api-gateway/src/middleware/rateLimiter.js) | Redis-backed rate limiting (20/min public, 100/min authenticated) |
+| [src/config/redis.js](../services/api-gateway/src/config/redis.js) | Redis client for rate limiter backing store |
+| [src/config/logger.js](../services/api-gateway/src/config/logger.js) | Winston structured JSON logger + HTTP request logging middleware |
+| [Dockerfile](../services/api-gateway/Dockerfile) | Single-stage Node.js 20 Alpine container |
+| [package.json](../services/api-gateway/package.json) | Dependencies: express, cors, helmet, ioredis, jsonwebtoken, http-proxy-middleware, express-rate-limit, rate-limit-redis, winston |
 
 ---
 
@@ -1025,15 +1025,15 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/index.js) | Express app + auto schema sync + demo user seeding on startup |
-| [src/controllers/auth.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/auth.controller.js) | Register, MFA login, OTP verify, token refresh |
-| [src/controllers/user.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/controllers/user.controller.js) | Get/update profile, KYC upload |
-| [src/routes/auth.routes.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/routes/auth.routes.js) | POST /register, /login, /verify-otp, /refresh |
-| [src/routes/user.routes.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/routes/user.routes.js) | GET/PUT /profile, POST /kyc |
-| [src/utils/otp.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/otp.js) | OTP generation, SHA-256 hashing, constant-time verification, email dispatch |
-| [src/utils/rabbitmq.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/rabbitmq.js) | RabbitMQ connection manager, exchange setup, publish methods |
-| [src/utils/validation.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/src/utils/validation.js) | Zod schemas + validation middleware factory |
-| [prisma/schema.prisma](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/auth-service/prisma/schema.prisma) | User, RefreshToken, OtpRecord models (auth_db schema) |
+| [src/index.js](../services/auth-service/src/index.js) | Express app + auto schema sync + demo user seeding on startup |
+| [src/controllers/auth.controller.js](../services/auth-service/src/controllers/auth.controller.js) | Register, MFA login, OTP verify, token refresh |
+| [src/controllers/user.controller.js](../services/auth-service/src/controllers/user.controller.js) | Get/update profile, KYC upload |
+| [src/routes/auth.routes.js](../services/auth-service/src/routes/auth.routes.js) | POST /register, /login, /verify-otp, /refresh |
+| [src/routes/user.routes.js](../services/auth-service/src/routes/user.routes.js) | GET/PUT /profile, POST /kyc |
+| [src/utils/otp.js](../services/auth-service/src/utils/otp.js) | OTP generation, SHA-256 hashing, constant-time verification, email dispatch |
+| [src/utils/rabbitmq.js](../services/auth-service/src/utils/rabbitmq.js) | RabbitMQ connection manager, exchange setup, publish methods |
+| [src/utils/validation.js](../services/auth-service/src/utils/validation.js) | Zod schemas + validation middleware factory |
+| [prisma/schema.prisma](../services/auth-service/prisma/schema.prisma) | User, RefreshToken, OtpRecord models (auth_db schema) |
 
 ---
 
@@ -1041,10 +1041,10 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/index.js) | Express app mounting accounts, payments, and loan routes |
-| [src/controllers/account.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/account.controller.js) | Create account, list accounts, balance check, ACID execute-transfer, bill payment, debit/credit |
-| [src/controllers/loan.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/src/controllers/loan.controller.js) | Apply loan, list loans, loan details, amortization calculator |
-| [prisma/schema.prisma](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/account-service/prisma/schema.prisma) | Account, Loan, UtilityReceipt models (acct_db schema) |
+| [src/index.js](../services/account-service/src/index.js) | Express app mounting accounts, payments, and loan routes |
+| [src/controllers/account.controller.js](../services/account-service/src/controllers/account.controller.js) | Create account, list accounts, balance check, ACID execute-transfer, bill payment, debit/credit |
+| [src/controllers/loan.controller.js](../services/account-service/src/controllers/loan.controller.js) | Apply loan, list loans, loan details, amortization calculator |
+| [prisma/schema.prisma](../services/account-service/prisma/schema.prisma) | Account, Loan, UtilityReceipt models (acct_db schema) |
 
 ---
 
@@ -1052,13 +1052,13 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/index.js) | Express app mounting transaction routes |
-| [src/controllers/transaction.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/controllers/transaction.controller.js) | Internal transfer orchestrator, external transfer (ISO 8583), history, receipts |
-| [src/utils/fraudEngine.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/fraudEngine.js) | 3-rule real-time fraud detection engine |
-| [src/utils/iso8583.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/iso8583.js) | ISO 8583 interbank clearing message simulator |
-| [src/utils/notifier.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/notifier.js) | Fire-and-forget async notification + audit dispatch via RabbitMQ |
-| [src/utils/rabbitmq.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/src/utils/rabbitmq.js) | RabbitMQ connection + publish methods (same class as auth-service) |
-| [prisma/schema.prisma](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/transaction-service/prisma/schema.prisma) | Transaction, FraudAlert models (txn_db schema) |
+| [src/index.js](../services/transaction-service/src/index.js) | Express app mounting transaction routes |
+| [src/controllers/transaction.controller.js](../services/transaction-service/src/controllers/transaction.controller.js) | Internal transfer orchestrator, external transfer (ISO 8583), history, receipts |
+| [src/utils/fraudEngine.js](../services/transaction-service/src/utils/fraudEngine.js) | 3-rule real-time fraud detection engine |
+| [src/utils/iso8583.js](../services/transaction-service/src/utils/iso8583.js) | ISO 8583 interbank clearing message simulator |
+| [src/utils/notifier.js](../services/transaction-service/src/utils/notifier.js) | Fire-and-forget async notification + audit dispatch via RabbitMQ |
+| [src/utils/rabbitmq.js](../services/transaction-service/src/utils/rabbitmq.js) | RabbitMQ connection + publish methods (same class as auth-service) |
+| [prisma/schema.prisma](../services/transaction-service/prisma/schema.prisma) | Transaction, FraudAlert models (txn_db schema) |
 
 ---
 
@@ -1066,13 +1066,13 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/index.js) | Express app + RabbitMQ consumer startup |
-| [src/consumers/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/consumers/index.js) | RabbitMQ message handlers (email, notify, audit) using mock req/res adapters |
-| [src/controllers/notification.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/controllers/notification.controller.js) | Internal notify/email, list notifications, mark read |
-| [src/controllers/audit.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/controllers/audit.controller.js) | Internal audit record, list audit logs, verify hash chain |
-| [src/utils/auditEngine.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/auditEngine.js) | SHA-256 cryptographic hash chain — record events + verify chain integrity |
-| [src/utils/mailer.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/mailer.js) | Nodemailer SMTP sender with mock fallback + branded HTML email templates |
-| [src/utils/rabbitmq.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/notification-service/src/utils/rabbitmq.js) | RabbitMQ connection + consume method |
+| [src/index.js](../services/notification-service/src/index.js) | Express app + RabbitMQ consumer startup |
+| [src/consumers/index.js](../services/notification-service/src/consumers/index.js) | RabbitMQ message handlers (email, notify, audit) using mock req/res adapters |
+| [src/controllers/notification.controller.js](../services/notification-service/src/controllers/notification.controller.js) | Internal notify/email, list notifications, mark read |
+| [src/controllers/audit.controller.js](../services/notification-service/src/controllers/audit.controller.js) | Internal audit record, list audit logs, verify hash chain |
+| [src/utils/auditEngine.js](../services/notification-service/src/utils/auditEngine.js) | SHA-256 cryptographic hash chain — record events + verify chain integrity |
+| [src/utils/mailer.js](../services/notification-service/src/utils/mailer.js) | Nodemailer SMTP sender with mock fallback + branded HTML email templates |
+| [src/utils/rabbitmq.js](../services/notification-service/src/utils/rabbitmq.js) | RabbitMQ connection + consume method |
 
 ---
 
@@ -1080,9 +1080,9 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/index.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/index.js) | Express app mounting admin routes |
-| [src/controllers/admin.controller.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/controllers/admin.controller.js) | Dashboard aggregation, user CRUD, suspend/unlock/verify KYC, fraud alerts |
-| [src/routes/admin.routes.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/services/admin-service/src/routes/admin.routes.js) | Route definitions for all admin endpoints |
+| [src/index.js](../services/admin-service/src/index.js) | Express app mounting admin routes |
+| [src/controllers/admin.controller.js](../services/admin-service/src/controllers/admin.controller.js) | Dashboard aggregation, user CRUD, suspend/unlock/verify KYC, fraud alerts |
+| [src/routes/admin.routes.js](../services/admin-service/src/routes/admin.routes.js) | Route definitions for all admin endpoints |
 
 ---
 
@@ -1090,13 +1090,13 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [src/lib/api.ts](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/lib/api.ts) | Axios HTTP client with JWT auto-inject + silent token refresh + API wrapper methods |
-| [src/components/Navbar.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/components/Navbar.tsx) | Global navigation bar with role-based menu items |
-| [src/app/layout.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/layout.tsx) | Root layout with dark theme, Navbar, footer |
-| [src/app/page.tsx](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/page.tsx) | Landing page with animated hero + feature cards |
-| [src/app/globals.css](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/src/app/globals.css) | Global CSS with design tokens (colors, glass effects, animations) |
-| [Dockerfile](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/Dockerfile) | Multi-stage build: npm build → production runner |
-| [tailwind.config.ts](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/client/tailwind.config.ts) | Custom Tailwind theme with AegisVault design system colors |
+| [src/lib/api.ts](../client/src/lib/api.ts) | Axios HTTP client with JWT auto-inject + silent token refresh + API wrapper methods |
+| [src/components/Navbar.tsx](../client/src/components/Navbar.tsx) | Global navigation bar with role-based menu items |
+| [src/app/layout.tsx](../client/src/app/layout.tsx) | Root layout with dark theme, Navbar, footer |
+| [src/app/page.tsx](../client/src/app/page.tsx) | Landing page with animated hero + feature cards |
+| [src/app/globals.css](../client/src/app/globals.css) | Global CSS with design tokens (colors, glass effects, animations) |
+| [Dockerfile](../client/Dockerfile) | Multi-stage build: npm build → production runner |
+| [tailwind.config.ts](../client/tailwind.config.ts) | Custom Tailwind theme with AegisVault design system colors |
 
 ---
 
@@ -1104,9 +1104,9 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [.github/workflows/ci.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/ci.yml) | CI pipeline: unit tests + frontend build + Docker compose validation |
-| [.github/workflows/cd.yml](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/.github/workflows/cd.yml) | CD pipeline: change detection → Docker build/push ACR → Azure Container Apps deploy |
-| [infrastructure/provision.azcli](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/infrastructure/provision.azcli) | One-time Azure resource provisioning (Resource Group, ACR, Container Apps Environment) |
+| [.github/workflows/ci.yml](../.github/workflows/ci.yml) | CI pipeline: unit tests + frontend build + Docker compose validation |
+| [.github/workflows/cd.yml](../.github/workflows/cd.yml) | CD pipeline: change detection → Docker build/push ACR → Azure Container Apps deploy |
+| [infrastructure/provision.azcli](../infrastructure/provision.azcli) | One-time Azure resource provisioning (Resource Group, ACR, Container Apps Environment) |
 
 ---
 
@@ -1114,9 +1114,9 @@ Creates the 5 PostgreSQL schemas and grants permissions to the `aegis_admin` rol
 
 | File | Purpose |
 |------|---------|
-| [scripts/init-schemas.sql](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/init-schemas.sql) | Creates 5 PostgreSQL schemas on database initialization |
-| [scripts/seed-demo.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/seed-demo.js) | Prepopulates demo users, accounts, transactions, fraud flags, audit trail |
-| [scripts/smoke-test.js](file:///c:/Users/sithu/MyWorks/My%20Softwares/Competitions/Duothon_26_devops/Duothon_6.0_BigBug/scripts/smoke-test.js) | 7-step E2E API smoke test through the API Gateway |
+| [scripts/init-schemas.sql](../scripts/init-schemas.sql) | Creates 5 PostgreSQL schemas on database initialization |
+| [scripts/seed-demo.js](../scripts/seed-demo.js) | Prepopulates demo users, accounts, transactions, fraud flags, audit trail |
+| [scripts/smoke-test.js](../scripts/smoke-test.js) | 7-step E2E API smoke test through the API Gateway |
 
 ---
 
