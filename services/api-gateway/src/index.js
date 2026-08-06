@@ -42,14 +42,17 @@ app.get('/health', (req, res) => {
   });
 });
 
-// 5. Rate Limiting Middleware (Backed by Redis)
+// 5. Public Rate Limiting Middleware (Backed by Redis)
 // Apply public 20 req/min limit to public auth endpoints
 app.use('/api/auth', publicRateLimiter);
-// Apply authenticated 100 req/min limit to all general /api endpoints
-app.use('/api', authenticatedRateLimiter);
 
 // 6. JWT Authentication & Whitelisting Middleware
 app.use(jwtAuthMiddleware);
+
+// 7. Authenticated Rate Limiting Middleware
+// Apply authenticated 100 req/min limit to all general /api endpoints
+// Must be placed AFTER jwtAuthMiddleware so req.user exists
+app.use('/api', authenticatedRateLimiter);
 
 // 7. Microservice Reverse Proxy Routing
 setupProxies(app);
