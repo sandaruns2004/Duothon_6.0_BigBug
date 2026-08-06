@@ -33,6 +33,14 @@ const verifyOtpSchema = z.object({
   path: ['email']
 });
 
+const resendOtpSchema = z.object({
+  email: z.string().email('Please provide a valid email address').optional(),
+  userId: z.string().optional()
+}).refine(data => data.email || data.userId, {
+  message: 'Either email or userId is required',
+  path: ['email']
+});
+
 const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required')
 });
@@ -78,5 +86,6 @@ module.exports = {
   refreshTokenSchema,
   updateProfileSchema,
   kycUploadSchema,
+  resendOtpSchema,
   validate
 };

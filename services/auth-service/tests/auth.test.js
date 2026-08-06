@@ -208,4 +208,41 @@ describe('🔐 AegisVault Auth Service Unit & Integration Suite', () => {
       expect(decoded.role).toBe('CUSTOMER');
     });
   });
+
+  describe('5. Resend OTP (POST /api/auth/resend-otp)', () => {
+    it('should successfully resend OTP for valid email', async () => {
+      const user = {
+        id: 'usr-test-resend',
+        email: 'resend@aegisvault.com',
+        role: 'CUSTOMER',
+      };
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.otpRecord.create.mockResolvedValue({});
+
+      const res = await request(app)
+        .post('/api/auth/resend-otp')
+        .send({
+          email: 'resend@aegisvault.com'
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toContain('OTP resent successfully');
+      expect(prisma.otpRecord.create).toHaveBeenCalled();
+    });
+
+    it('should return 400 if user not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/api/auth/resend-otp')
+        .send({
+          email: 'unknown@aegisvault.com'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.error).toContain('User account not found');
+    });
+  });
 });

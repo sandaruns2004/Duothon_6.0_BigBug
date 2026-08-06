@@ -6,6 +6,7 @@ const {
   registerSchema,
   loginSchema,
   verifyOtpSchema,
+  resendOtpSchema,
   refreshTokenSchema
 } = require('../utils/validation');
 
@@ -16,6 +17,7 @@ const {
 router.post('/register', validate(registerSchema), authController.register);
 router.post('/login', validate(loginSchema), authController.login);
 router.post('/verify-otp', validate(verifyOtpSchema), authController.verifyOtp);
+router.post('/resend-otp', validate(resendOtpSchema), authController.resendOtp);
 router.post('/refresh', validate(refreshTokenSchema), authController.refreshToken);
 
 module.exports = router;

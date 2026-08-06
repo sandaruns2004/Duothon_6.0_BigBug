@@ -155,6 +155,7 @@ export const authApi = {
   register: (data: Record<string, unknown>) => api.post('/api/auth/register', data),
   login: (data: Record<string, unknown>) => api.post('/api/auth/login', data),
   verifyOtp: (data: Record<string, unknown>) => api.post('/api/auth/verify-otp', data),
+  resendOtp: (data: Record<string, unknown>) => api.post('/api/auth/resend-otp', data),
   getMe: () => api.get('/api/users/profile'),
   logout: () => api.post('/api/auth/logout'),
 };
