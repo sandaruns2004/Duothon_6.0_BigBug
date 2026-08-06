@@ -230,25 +230,32 @@ const executeTransfer = async (req, res) => {
         throw error;
       }
 
-      // 4. Atomic Debit Sender
-      const updatedSender = await tx.account.update({
-        where: { id: sender.id },
+      // 4. Atomic Debit Sender with Conditional Check
+      const senderUpdateResult = await tx.account.updateMany({
+        where: { 
+          id: sender.id,
+          balance: { gte: transferAmount }
+        },
         data: {
-          balance: {
-            decrement: transferAmount
-          }
+          balance: { decrement: transferAmount }
         }
       });
 
+      if (senderUpdateResult.count === 0) {
+        const error = new Error('Insufficient funds in source account for this transfer (Balance changed).');
+        error.code = 'INSUFFICIENT_FUNDS';
+        throw error;
+      }
+
       // 5. Atomic Credit Receiver
-      const updatedReceiver = await tx.account.update({
+      await tx.account.update({
         where: { id: receiver.id },
-        data: {
-          balance: {
-            increment: transferAmount
-          }
-        }
+        data: { balance: { increment: transferAmount } }
       });
+
+      // Re-fetch accurate balances after atomic updates
+      const updatedSender = await tx.account.findUnique({ where: { id: sender.id } });
+      const updatedReceiver = await tx.account.findUnique({ where: { id: receiver.id } });
 
       return {
         sender: updatedSender,
@@ -374,11 +381,20 @@ const payBill = async (req, res) => {
         throw error;
       }
 
-      // Debit account
-      await tx.account.update({
-        where: { id: account.id },
+      // Atomic Debit with Condition
+      const debitResult = await tx.account.updateMany({
+        where: { 
+          id: account.id,
+          balance: { gte: paymentAmount }
+        },
         data: { balance: { decrement: paymentAmount } }
       });
+
+      if (debitResult.count === 0) {
+        const error = new Error('Insufficient funds in account for utility bill payment (Balance changed).');
+        error.code = 'INSUFFICIENT_FUNDS';
+        throw error;
+      }
 
       // Generate receipt
       const newReceipt = await tx.utilityReceipt.create({
@@ -479,10 +495,21 @@ const debitAccount = async (req, res) => {
         throw error;
       }
 
-      return await tx.account.update({
-        where: { id: account.id },
+      const debitResult = await tx.account.updateMany({
+        where: { 
+          id: account.id,
+          balance: { gte: debitAmount }
+        },
         data: { balance: { decrement: debitAmount } }
       });
+
+      if (debitResult.count === 0) {
+        const error = new Error('Insufficient funds in account (Balance changed).');
+        error.code = 'INSUFFICIENT_FUNDS';
+        throw error;
+      }
+
+      return await tx.account.findUnique({ where: { id: account.id } });
     });
 
     logger.info('💸 Account debited successfully:', {
